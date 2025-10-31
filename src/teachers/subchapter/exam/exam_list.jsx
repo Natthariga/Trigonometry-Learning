@@ -128,13 +128,13 @@ const SubchapterExam = () => {
     };
 
     return (
-        <section className="flex flex-col md:flex-row h-screen overflow-hidden w-full">
+        <section className="flex h-screen overflow-hidden w-full">
             <Sidebar />
 
             {/* Main content */}
             <div className="p-6 md:p-8 flex-1 overflow-y-auto">
                 {/* หัวข้อบนสุด */}
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4 md:gap-0">
+                <div className="flex flex-col md:flex-row items-start md:items-center mb-4 gap-4">
                     <div className="flex items-center space-x-2 text-sm text-gray-700 bg-gray-50 px-4 py-2 rounded-full whitespace-nowrap">
                         <Clock size={16} className="text-blue-500" />
                         <span>
@@ -147,18 +147,19 @@ const SubchapterExam = () => {
                         </span>
                     </div>
 
-                    <SearchAndSort
-                        searchTerm={searchTerm}
-                        setSearchTerm={setSearchTerm}
-                        sortValue={sortOption}
-                        onSortChange={(v) => setSortOption(v)}
-                        sortOptions={sortOptions}
-                    />
-
+                    <div className="md:ml-auto">
+                        <SearchAndSort
+                            searchTerm={searchTerm}
+                            setSearchTerm={setSearchTerm}
+                            sortValue={sortOption}
+                            onSortChange={(v) => setSortOption(v)}
+                            sortOptions={sortOptions}
+                        />
+                    </div>
                 </div>
 
                 {/* ชื่อหัวข้อ + ปุ่มเพิ่ม */}
-                <div id="topic" className="relative flex justify-between items-center mt-10 bg-white border border-gray-100 p-3 rounded">
+                <div id="topic" className="relative flex justify-between items-center mt-4 bg-white border border-gray-100 p-3 rounded">
                     <div className="absolute left-0 top-0 h-full w-1 rounded-l-2xl bg-blue-500" />
                     <div className="pl-4">
                         <h1 className="text-lg md:text-2xl font-semibold text-gray-800">
@@ -168,7 +169,7 @@ const SubchapterExam = () => {
                 </div>
 
                 {/* ตาราง */}
-                <div className="p-6 md:p-6 flex-grow">
+                <div className="p-6 md:p-6 flex-grow overflow-x-auto">
                     <div className="w-full max-w-full text-sm md:text-base">
                         <table className="min-w-full divide-y divide-blue-200">
                             <thead>
@@ -176,7 +177,7 @@ const SubchapterExam = () => {
                                     <th className="px-4 py-2 text-left text-xs md:text-sm font-medium text-gray-500 uppercase">ชื่อหัวข้อ</th>
                                     {/* <th className="px-4 py-2 text-left text-xs md:text-sm font-medium text-gray-500 uppercase w-[300px]">คำอธิบาย</th> */}
                                     <th
-                                        className="px-4 py-2 text-center text-xs md:text-sm font-medium text-gray-500 uppercase cursor-pointer"
+                                        className="px-4 py-2 text-center text-xs md:text-sm font-medium text-gray-500 uppercase cursor-pointer whitespace-nowrap"
                                         onClick={() => toggleSortOrder('questionCount')}
                                     >
                                         <div className="flex items-center justify-center gap-1">
@@ -187,7 +188,7 @@ const SubchapterExam = () => {
                                         </div>
                                     </th>
                                     <th
-                                        className="px-4 py-2 text-center text-xs md:text-sm font-medium text-gray-500 uppercase cursor-pointer select-none"
+                                        className="px-4 py-2 text-center text-xs md:text-sm font-medium text-gray-500 uppercase cursor-pointer select-none whitespace-nowrap"
                                         onClick={() => toggleSortOrder('timeLimit')}
                                     >
                                         <div className="flex items-center justify-center gap-1">
@@ -204,7 +205,7 @@ const SubchapterExam = () => {
                                 {getFilteredAndSortedSubchapters().map((sub, idx) => (
                                     <tr
                                         key={sub.subchapter_id || idx}
-                                        className="hover:bg-gray-100 cursor-pointer h-16"
+                                        className="hover:bg-gray-100 cursor-pointer h-16 odd:bg-white even:bg-gray-100"
                                         onClick={(e) => {
                                             const tag = e.target.tagName.toLowerCase();
                                             const classList = e.target.className;

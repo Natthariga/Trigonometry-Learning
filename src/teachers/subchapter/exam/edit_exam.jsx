@@ -245,7 +245,7 @@ const EditExam = () => {
             </button>
           </div> */}
 
-          <div className="flex-1 overflow-y-auto p-8 bg-gray-50">
+          <div className="flex-1 overflow-y-auto p-8 bg-gray-50 mt-5 md:mt-0">
 
             {/* Settings Bar */}
             <div className="bg-white p-6 rounded-xl shadow mb-8 space-y-6">

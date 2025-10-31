@@ -325,8 +325,8 @@ const Lessons = (isFavoritedInitial = false) => {
                 {data && (
                     <>
                         {/* Title */}
-                        <div className="flex justify-between items-center mb-6">
-                            <h1 className="text-3xl font-bold text-indigo-700">
+                        <div className="flex justify-between items-center mb-6 gap-4">
+                            <h1 className="text-xl md:text-3xl font-bold text-indigo-700">
                                 {data?.subchapter_name}
                             </h1>
                             <button
@@ -336,14 +336,21 @@ const Lessons = (isFavoritedInitial = false) => {
                                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                                     }`}
                             >
-                                {isFavorited ? "❤️ บทเรียนที่ชอบแล้ว" : "🤍 เพิ่มในบทเรียนที่ชอบ"}
+                                {/* แสดงเฉพาะอิโมจิบนมือถือ */}
+                                <span className="inline md:hidden">
+                                    {isFavorited ? "❤️" : "🤍"}
+                                </span>
+
+                                {/* แสดงทั้งอิโมจิ + ข้อความบน Desktop */}
+                                <span className="hidden md:inline">
+                                    {isFavorited ? "❤️ บทเรียนที่ชอบแล้ว" : "🤍 เพิ่มในบทเรียนที่ชอบ"}
+                                </span>
                             </button>
+
                         </div>
 
-
-
                         {/* Content grid */}
-                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                        <div>
                             {/* Video Section */}
                             <div className="lg:col-span-7 space-y-4">
                                 <div className="relative bg-black rounded-2xl overflow-hidden border border-gray-200">
@@ -408,8 +415,8 @@ const Lessons = (isFavoritedInitial = false) => {
                             </div>
 
                             {/* Sidebar Resources */}
-                            <aside className="space-y-6 lg:col-span-5">
-                                <div className="p-6 bg-white rounded-2xl shadow hover:shadow-xl transform hover:scale-105 transition cursor-pointer">
+                            <aside className="space-y-4 lg:col-span-5 mt-4">
+                                <div className="p-6 bg-white rounded-2xl shadow hover:shadow-xl transform hover:scale-105 transition cursor-pointer hover:bg-gray-100">
                                     <Link to={`/article/${subchapterId}`} target="_blank" rel="noopener noreferrer">
                                         <div className="flex items-center gap-6">
                                             <img src={icon1} alt="icon" className="w-12 h-14 mb-3" />
@@ -424,7 +431,7 @@ const Lessons = (isFavoritedInitial = false) => {
                                             window.open(getFileUrl(data.subchapter_file),"_blank");
                                         }
                                     }}
-                                    className="p-6 bg-white rounded-2xl shadow hover:shadow-xl transform hover:scale-105 transition cursor-pointer"
+                                    className="p-6 bg-white rounded-2xl shadow hover:shadow-xl transform hover:scale-105 transition cursor-pointer hover:bg-gray-100"
                                 >
                                     <div className="flex items-center gap-6">
                                         <img src={icon2} alt="icon" className="w-12 h-14 mb-3" />

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import Sidebar from "../../components/sidebarAdmin";
 import { getUserId } from "../../js/auth";
 import { useNavigate } from "react-router-dom";
-import { FaUserGraduate, FaChalkboardTeacher, FaPlus } from "react-icons/fa";
+import { FaUserGraduate, FaChalkboardTeacher, FaPlus, FaSchool } from "react-icons/fa";
 import Swal from "sweetalert2";
 import {
     getTeacherClassrooms,
@@ -127,8 +127,8 @@ const ClassroomList = () => {
         <section className="flex h-screen w-full">
             <Sidebar />
             <div className="p-8 w-full">
-                <div className="flex items-center justify-between mb-6">
-                    <h1 className="text-2xl font-bold text-gray-800">ห้องเรียนที่ฉันสอน</h1>
+                <div className="flex flex-col md:flex-row items-center justify-between mb-6 mt-6 md:mt-0">
+                    <h1 className="text-2xl font-bold text-blue-800 mb-2 inline-flex gap-1"><FaSchool className="text-blue-950 md:hidden"/>ห้องเรียนที่ฉันสอน</h1>
                     <div className="flex gap-3">
                         <button
                             onClick={() => setShowCreatePopup(true)}

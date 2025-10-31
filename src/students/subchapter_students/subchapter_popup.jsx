@@ -1,5 +1,6 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, } from "react";
 import Swal from "sweetalert2";
+import { HelpCircle } from "lucide-react";
 
 export default function SubchapterPopup({ popup, onAnswered, requiredAnswer = true }) {
     const [textAnswer, setTextAnswer] = useState("");
@@ -45,8 +46,8 @@ export default function SubchapterPopup({ popup, onAnswered, requiredAnswer = tr
         }
 
         // ตรวจคำตอบ
-        const isCorrect = popup.correct_answer 
-            ? answer === popup.correct_answer 
+        const isCorrect = popup.correct_answer
+            ? answer === popup.correct_answer
             : null;
 
         if (isCorrect === true) {
@@ -83,10 +84,13 @@ export default function SubchapterPopup({ popup, onAnswered, requiredAnswer = tr
                 className="bg-white space-y-6 rounded-xl shadow-2xl w-[min(96%,700px)] max-h-[90vh] overflow-auto p-6"
                 onClick={(e) => e.stopPropagation()}
             >
-                <h3 className="text-3xl font-semibold mb-2 text-center">คำถามระหว่างเรียน</h3>
-                <p className="text-gray-700 mb-4 whitespace-pre-wrap text-center text-2xl">
-                    {popup.popup_content}
-                </p>
+                <h3 className="text-3xl font-semibold mb-2 text-center text-blue-800">คำถามระหว่างเรียน</h3>
+                <div className="flex items-center border-2 border-dashed border-green-200 rounded py-2 bg-green-50">
+                    <span className="px-2"><HelpCircle className="text-blue-700"/></span>
+                    <p className="text-gray-700 whitespace-pre-wrap text-center text-2xl">
+                        {popup.popup_content}
+                    </p>
+                </div>
 
                 {popup.popup_type === "text" && (
                     <textarea
@@ -105,11 +109,10 @@ export default function SubchapterPopup({ popup, onAnswered, requiredAnswer = tr
                                     key={i}
                                     type="button"
                                     onClick={() => setSelected(c)}
-                                    className={`text-left px-4 py-2 rounded border transition ${
-                                        selected === c
+                                    className={`text-left px-4 py-2 rounded border-2 border-dashed border-gray-200 transition ${selected === c
                                             ? "bg-blue-600 text-white border-blue-600"
                                             : "bg-white text-gray-700 hover:bg-gray-50"
-                                    }`}
+                                        }`}
                                 >
                                     {c}
                                 </button>

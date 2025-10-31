@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Sidebar from "../../components/navBar";
 import Footer from "../../components/footer";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, HelpCircle } from "lucide-react";
 import axios from "axios";
 import Swal from "sweetalert2";
 import { MathJaxContext, MathJax } from "better-react-mathjax";
@@ -167,12 +167,12 @@ const QuizPage = ({ mode }) => {
                 <Sidebar isSidebarOpen={isSidebarOpen} toggleSidebar={() => setSidebarOpen(o => !o)} />
                 <div className="p-6 bg-gray-100 flex-1 pt-32 w-full overflow-y-auto">
                     {/* header */}
-                    <div className="flex items-center justify-between gap-4">
-                        <div className="bg-white flex items-center gap-1 flex-1 shadow p-2">
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-4 w-full">
+                        <div className="bg-white flex items-center gap-1 flex-1 shadow p-2 overflow-hidden w-full md:auto">
                             <button onClick={() => scrollRef.current.scrollBy({ left: -100, behavior: "smooth" })} className="px-2">
                                 <ChevronLeft size={24} />
                             </button>
-                            <div ref={scrollRef} className="flex gap-2 overflow-x-auto hide-scrollbar">
+                            <div ref={scrollRef} className="flex gap-2 overflow-x-auto hide-scrollbar flex-1">
                                 {questions.map((_, i) => {
                                     const isCurrent = currentQuestion === i + 1;
                                     const isAnswered = answers[i] !== null;
@@ -196,7 +196,7 @@ const QuizPage = ({ mode }) => {
                                 <ChevronRight size={24} />
                             </button>
                         </div>
-                        <div className="flex flex-col text-center text-white w-32 p-2 bg-blue-600 rounded shadow-lg">
+                        <div className="flex flex-col w-full text-center text-white md:w-32 p-2 bg-blue-600 rounded shadow-lg mt-2 md:mt-0 md:ml-4">
                             <span>เหลือเวลา</span>
                             <span>{formatTime(timeLeft)}</span>
                         </div>
@@ -204,8 +204,11 @@ const QuizPage = ({ mode }) => {
 
                     {/* คำถาม */}
                     <div className="bg-white p-8 mt-3 shadow space-y-6">
-                        <p className="text-3xl font-semibold mb-4">คำถาม {currentQuestion}</p>
-                        <div className="text-xl font-medium py-2">
+                     <div className="inline-flex gap-1 border px-2 py-1 rounded border-gray-200">
+                        <HelpCircle className="text-blue-700"/> 
+                        <span className="text-lg font-semibold text-blue-800">คำถาม {currentQuestion}</span>
+                     </div>
+                        <div className="text-xl font-medium py-2 overflow-x-auto">
                             <InlineMath math={questions[currentQuestion - 1]?.question_text} />
                         </div>
                         {questions[currentQuestion - 1]?.question_picture && (
@@ -259,7 +262,7 @@ const QuizPage = ({ mode }) => {
 
                             {currentQuestion === questions.length && allAnswered ? (
                                 <button
-                                    className="flex-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                                    className="flex-1 bg-blue-500 text-white rounded hover:bg-blue-600 py-2"
                                     onClick={handleConfirm}
                                 >
                                     บันทึก

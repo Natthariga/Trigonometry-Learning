@@ -92,14 +92,14 @@ const GetSheets = () => {
     return (
         <section className="flex h-screen w-full bg-gray-50">
             <Sidebar />
-            <div className="flex-1 overflow-auto p-8">
-                <header className="flex justify-between items-center mb-4">
-                    <div>
+            <div className="flex-1 overflow-auto p-8 mt-5 md:mt-0">
+                <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 w-full">
+                    <div className='flex flex-col w-full'>
                         <h2 className="text-[20px] font-semibold text-gray-800">รายการชีทที่อนุมัติ</h2>
-                        <p className="text-[12px] text-gray-600 mt-1 pl-2">พบทั้งหมด: {filteredSheets.length} รายการ</p>
+                        <p className="text-[12px] text-gray-600 mt-0 pl-0 sm:mt-1 sm:pl-2">พบทั้งหมด: {filteredSheets.length} รายการ</p>
                     </div>
 
-                    <div className="flex items-center gap-4 relative">
+                    <div className="flex items-center justify-between gap-4 relative w-full sm:w-auto mt-3 sm:mt-0">
 
                         <Link to="/teacher/approved">
                             <div className="relative">
@@ -121,7 +121,6 @@ const GetSheets = () => {
                             onSortChange={setSortOption}
                             sortOptions={sortOptions}
                         />
-
 
                     </div>
 

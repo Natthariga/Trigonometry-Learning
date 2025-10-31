@@ -118,9 +118,9 @@ const Subchapter = () => {
         <section className="flex h-screen overflow-hidden w-full">
             <Sidebar />
 
-            <div className=" p-8 w-full overflow-y-auto">
-                <div className="flex justify-between items-center mb-4">
-                    <div className="flex items-center space-x-2 text-sm text-gray-700 bg-gray-50 px-4 py-2 rounded-full">
+            <div className=" p-8 w-full overflow-y-auto mt-4 md:mt-0">
+                <div className="flex flex-col md:flex-row items-start md:items-center mb-4 gap-4">
+                    <div className="flex items-center space-x-2 text-sm text-gray-700 bg-gray-50 px-4 py-2 rounded-full whitespace-nowrap">
                         <Clock size={16} className="text-blue-500" />
                         <span>
                             {new Date().toLocaleDateString('th-TH', {
@@ -132,17 +132,18 @@ const Subchapter = () => {
                         </span>
                     </div>
 
-                    <SearchAndSort
-                        searchTerm={searchTerm}
-                        setSearchTerm={setSearchTerm}
-                        sortValue={sortOption}
-                        onSortChange={(v) => setSortOption(v)}
-                        sortOptions={sortOptions}
-                    />
-
+                    <div className="md:ml-auto">
+                        <SearchAndSort
+                            searchTerm={searchTerm}
+                            setSearchTerm={setSearchTerm}
+                            sortValue={sortOption}
+                            onSortChange={(v) => setSortOption(v)}
+                            sortOptions={sortOptions}
+                        />
+                    </div>
                 </div>
 
-                <div id="topic" className="relative flex justify-between items-center mt-10 bg-white border border-gray-100 p-3 rounded">
+                <div id="topic" className="relative flex justify-between items-center mt-4 bg-white border border-gray-100 p-3 rounded">
                     <div className="absolute left-0 top-0 h-full w-1 rounded-l-2xl bg-blue-500" />
 
                     <div className="pl-4">
@@ -168,7 +169,7 @@ const Subchapter = () => {
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center m-2 gap-4">
                                             <div className="flex flex-col">
-                                                <p className="text-gray-800">{sub.subchapter_name}</p>
+                                                <p className="text-gray-800 font-semibold">{sub.subchapter_name}</p>
                                                 {sub.subchapter_description && (
                                                     <p className="text-[13px] text-gray-500 break-words whitespace-normal">
                                                         {sub.subchapter_description}
@@ -183,7 +184,7 @@ const Subchapter = () => {
                                             setSelectedSubchapter={setSelectedSubchapter}
                                             setShowEditModal={setShowEditModal}
                                             setIsPopupOpen={setIsPopupOpen}
-                                            
+
                                         />
 
                                         {/* <div className="flex gap-6 mr-3">
@@ -266,7 +267,7 @@ const Subchapter = () => {
 
             </div>
 
-            <div className="w-[500px] bg-white p-5 shadow-md overflow-y-auto">
+            <div className="w-[500px] bg-white p-5 shadow-md overflow-y-auto hidden md:block">
                 {/* 
                 <div className="mb-6">
                     <Calendar className="border rounded" />

@@ -16,7 +16,8 @@ import {
     Building,
     UserIcon,
     LogOut,
-    Database
+    Database,
+    MessageCircleIcon
 } from 'lucide-react';
 import { logout } from '../js/auth';
 
@@ -52,7 +53,7 @@ const Sidebar = () => {
     return (
         <div className='flex min-h-screen'>
             <button
-                className="md:hidden fixed top-4 left-4 z-50 p-2 rounded-md bg-white text-black hover:bg-gray-200"
+                className="md:hidden fixed top-2 right-4 z-50 p-2 rounded-md bg-gray-200 text-black hover:bg-gray-400"
                 onClick={toggleSidebar}
             >
                 <MenuIcon />
@@ -60,13 +61,13 @@ const Sidebar = () => {
 
             {open && (
                 <div
-                    className="fixed inset-0 z-40 bg-black bg-opacity-30 md:hidden"
+                    className="fixed inset-0 z-40 backdrop-blur-sm bg-white/10  md:hidden"
                     onClick={toggleSidebar}
                 />
             )}
 
             <aside
-                className={`fixed z-50 top-0 left-0  w-64 bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow-2xl rounded-tr-3xl rounded-br-3xl
+                className={`fixed z-50 top-0 left-0  w-64 bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow-2xl rounded-tr-3xl rounded-br-3xl h-full
                             transition-transform duration-300 md:relative md:translate-x-0 md:flex md:flex-col ${open ? 'translate-x-0' : '-translate-x-full'}`}
                 style={{ borderTopRightRadius: '2rem', borderBottomRightRadius: '2rem' }}
             >
@@ -150,11 +151,11 @@ const Sidebar = () => {
                                     : 'text-white hover:bg-white/10 rounded-lg'
                                     }`}
                             >
-                                <BellIcon
+                                <MessageCircleIcon
                                     className={`h-4 w-4 ${isActive('/teacher/notification') ? 'text-blue-600' : 'text-white'
                                         }`}
                                 />
-                                <span>แจ้งเตือน</span>
+                                <span>ห้องแชท</span>
                             </Link>
                         </li>
 

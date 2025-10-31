@@ -109,7 +109,7 @@ export default function ProgressDashboard() {
     return (
         <section className="flex min-h-screen">
             <Sidebar />
-            <div className="flex-1 p-8 space-y-8">
+            <div className="flex-1 p-8 space-y-8 mt-5 md:mt-0">
                 {/* Toolbar ฟิลเตอร์ */}
                 <div className="bg-white rounded-xl shadow p-4 flex flex-wrap items-center gap-4">
                     {/* ห้องเรียน */}

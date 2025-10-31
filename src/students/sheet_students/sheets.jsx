@@ -106,42 +106,43 @@ const Sheet = () => {
     return (
         <section className="flex flex-col min-h-screen">
             <Sidebar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
-            <div className="flex-1 p-8 pt-32 w-full overflow-y-auto px-24 bg-gray-50 min-h-screen">
+            <div className="flex-1 p-8 pt-32 w-full overflow-y-auto px-16 bg-gray-50 min-h-screen">
+
                 <div className="flex justify-between items-center mb-6">
-                    <div className='flex gap-3'>
+                    <div className='flex gap-3 overflow-x-auto flex-nowrap hide-scroller'>
                         <button
                             onClick={() => setFilter('all')}
-                            className={`flex items-center gap-2 px-2 py-2 rounded-full ${filter === 'all' ? 'bg-blue-600 text-white' : 'bg-white shadow text-black'}`}
+                            className={`flex items-center gap-2 px-2 py-2 rounded-full ${filter === 'all' ? 'bg-blue-600 text-white' : 'bg-white shadow text-black'}`} title='ทั้งหมด'
                         >
                             <div className="w-6 h-6 flex items-center justify-center rounded-full bg-blue-100 text-blue-600">
                                 <Layers size={14} />
                             </div>
-                            <p className={`${filter === 'all' ? '!text-white' : 'text-black'} px-2`}>ทั้งหมด</p>
+                            <p className={`${filter === 'all' ? '!text-white' : 'text-black'} px-2 ${filter === 'all' ? 'block' : 'hidden'} md:block`}>ทั้งหมด</p>
                         </button>
 
                         <button
                             onClick={() => setFilter('favorites')}
-                            className={`flex items-center gap-2 px-2 py-2 rounded-full ${filter === 'favorites' ? 'bg-blue-600 text-white' : 'bg-white shadow text-black'}`}
+                            className={`flex items-center gap-2 px-2 py-2 rounded-full ${filter === 'favorites' ? 'bg-blue-600 text-white' : 'bg-white shadow text-black'}`} title='รายการโปรด'
                         >
                             <div className="w-6 h-6 flex items-center justify-center rounded-full bg-blue-100 text-blue-600">
                                 <Heart size={14} />
                             </div>
-                            <p className={`${filter === 'favorites' ? '!text-white' : 'text-black'} px-2`}>รายการโปรด</p>
+                            <p className={`${filter === 'favorites' ? '!text-white' : 'text-black'} px-2 ${filter === 'favorites' ? 'block' : 'hidden'} md:block`}>รายการโปรด</p>
                         </button>
 
                         <button
                             onClick={() => setFilter('mine')}
-                            className={`flex items-center gap-2 px-2 py-2 rounded-full ${filter === 'mine' ? 'bg-blue-600 text-white' : 'bg-white shadow text-black'}`}
+                            className={`flex items-center gap-2 px-2 py-2 rounded-full ${filter === 'mine' ? 'bg-blue-600 text-white' : 'bg-white shadow text-black'}`} title='รายการของฉัน'
                         >
                             <div className="w-6 h-6 flex items-center justify-center rounded-full bg-blue-100 text-blue-600">
                                 <User size={14} />
                             </div>
-                            <p className={`${filter === 'mine' ? '!text-white' : 'text-black'} px-2`}>รายการของฉัน</p>
+                            <p className={`${filter === 'mine' ? '!text-white' : 'text-black'} px-2 ${filter === 'mine' ? 'block' : 'hidden'} md:block`}>รายการของฉัน</p>
                         </button>
 
                     </div>
 
-                    <div>
+                    <div className='flex-shrink-0 mt-2 sm:mt-0'>
                         <button
                             onClick={() => setShowPopup(true)}
                             className="flex justify-center items-center w-10 h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow transition duration-200 transform hover:scale-105">

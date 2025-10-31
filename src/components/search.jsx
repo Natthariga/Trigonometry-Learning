@@ -12,9 +12,9 @@ export default function SearchAndSort({
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-2 w-full">
       {/* Search */}
-      <div className="relative">
+      <div className="relative w-full sm:w-auto mb-2 sm:mb-0">
         <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
           <FaSearch className="h-4 w-4" />
         </span>
@@ -23,13 +23,13 @@ export default function SearchAndSort({
           placeholder="ค้นหา"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-9 pr-3 py-1 border border-gray-300 rounded-md text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
 
       {/* Sort menu (ถ้ามีตัวเลือก) */}
       {sortOptions.length > 0 && (
-        <div className="relative">
+        <div className="relative self-start md:self-auto">
           <button
             onClick={() => setOpen((v) => !v)}
             className="p-2 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-100 focus:outline-none"

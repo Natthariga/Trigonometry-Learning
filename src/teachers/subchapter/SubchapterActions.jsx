@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2 ,MoreHorizontal } from "lucide-react";
 import { FaChevronDown, FaPlus } from "react-icons/fa";
 import { Link } from "react-router-dom";
 
@@ -26,8 +26,7 @@ const SubchapterActions = ({ sub, handleDelete, setSelectedSubchapter, setShowEd
                 }}
                 className="flex items-center gap-1 p-2.5 py-1.5 rounded-lg bg-gray-100 text-blue-700 text-xs font-medium hover:bg-blue-700 hover:text-white transition duration-200 shadow-sm"
             >
-                <FaChevronDown className="w-3 h-3" />
-                <span>จัดการ</span>
+                <span><MoreHorizontal size={16} /></span>
             </button>
 
             {open && (
