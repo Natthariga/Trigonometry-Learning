@@ -1,0 +1,18 @@
+#video_container {
+    background-color: saddlebrown;
+    background-image: url('../assets/test.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    width: auto;
+    height: 300px;
+}
+
+#popup_posttest {
+    background-image: url('../assets/posttest_bg.png');
+    background-size: 100% 100%;
+    background-position: center;
+    background-repeat: no-repeat;
+    height: 400px;
+    width: 400px;
+}

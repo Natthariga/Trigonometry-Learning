@@ -1,0 +1,142 @@
+import React, { useState } from "react";
+import { Link, useNavigate } from 'react-router-dom';
+import '../style/register.css';
+import mainBg from "../assets/main.png";
+import { registerStudentApi } from "../api/auth";
+
+const Register = () => {
+    const [student_id, setStudentId] = useState('');
+    const [first_name, setName] = useState('');
+    const [last_name, setLastname] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [classroom_id, setClassroomId] = useState('');
+    const [errorMessage, setErrorMessage] = useState('');
+    const navigate = useNavigate();
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        const userData = {
+            student_id,
+            first_name,
+            last_name,
+            email,
+            password,
+            classroom_id,
+        };
+
+        try {
+            const data = await registerStudentApi(userData);
+
+            if (data.status === "success") {
+                setErrorMessage("");
+                navigate("/home");
+            } else {
+                setErrorMessage(data.message);
+            }
+        } catch (error) {
+            setErrorMessage("ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้");
+        }
+    };
+
+    return (
+        <div
+            style={{
+                backgroundImage: `url(${mainBg})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+            }}
+            className="flex justify-center items-center min-h-screen p-4" >
+            <div className="flex flex-col md:flex-row w-full max-w-4xl rounded-xl shadow-lg overflow-hidden bg-white/80 backdrop-blur-md">
+                {/* ซ้าย */}
+                <div className="w-full md:w-1/2 p-8 flex flex-col justify-center items-center text-center bg-blue-500">
+                    <h2 className="text-4xl text-white font-bold mb-4">เริ่มต้นใช้งาน</h2>
+                    <p className="!text-white text-md mb-6">
+                        หากคุณมีบัญชีอยู่แล้ว<br />สามารถเข้าสู่ระบบเพื่อเริ่มต้นการเรียนรู้ได้ทันที
+                    </p>
+                    <Link to="/login">
+                        <button
+                            id='login'
+                            className="bg-white hover:bg-blue-400 hover:text-white px-6 py-2 rounded">
+                            เข้าสู่ระบบ
+                        </button>
+                    </Link>
+                </div>
+
+                {/* ฝั่งขวา - ฟอร์ม */}
+                <div className="w-full md:w-1/2 p-8 flex flex-col justify-center">
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        {/* <div>
+                            <label className="block text-lg">ชื่อ</label>
+                            <input
+                                type="text"
+                                value={first_name}
+                                onChange={e => setName(e.target.value)}
+                                className="w-full border border-gray-300 rounded px-3 py-2 mt-1"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-lg">นามสกุล</label>
+                            <input
+                                type="text"
+                                value={last_name}
+                                onChange={e => setLastname(e.target.value)}
+                                className="w-full border border-gray-300 rounded px-3 py-2 mt-1"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-lg">อีเมล</label>
+                            <input
+                                type="email"
+                                value={email}
+                                onChange={e => setEmail(e.target.value)}
+                                className="w-full border border-gray-300 rounded px-3 py-2 mt-1"
+                                required
+                            />
+                        </div> */}
+
+                        <div>
+                            <label className="block text-lg">รหัสนักเรียน</label>
+                            <input 
+                                type="text"
+                                value={last_name}
+                                onChange={e => setLastname(e.target.value)}
+                                className="w-full border border-gray-300 rounded px-3 py-2 mt-1"
+                                required
+                            />
+                        </div>
+                        {/* รหัสผ่าน */}
+                        <div>
+                            <label className="block text-lg">รหัสผ่าน</label>
+                            <input
+                                type="password"
+                                value={password}
+                                onChange={e => setPassword(e.target.value)}
+                                className="w-full border border-gray-300 rounded px-3 py-2 mt-1"
+                                required
+                            />
+                        </div>
+
+                        {errorMessage && (
+                            <p className="text-red-500 text-sm">{errorMessage}</p>
+                        )}
+
+                        <button
+                            id="sign_up"
+                            type="submit"
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-white text-lg py-2 rounded"
+                        >
+                            สมัครสมาชิก
+                        </button>
+                    </form>
+                </div>
+            </div >
+        </div >
+    );
+};
+
+export default Register;

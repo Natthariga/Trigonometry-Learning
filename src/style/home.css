@@ -1,0 +1,31 @@
+#header{
+    background-color: #edf4ff;
+}
+
+#readyBtn {
+    background-color: #2839f8;
+}
+
+#readyBtn:hover {
+    background-color: #0f27e4;
+}
+
+.imageBox {
+    width: 20px;
+    height: 20px;
+    object-fit: cover;
+}
+
+.box{
+    /* background-color: wheat; */
+    height: 600px;
+}
+
+.item {
+    display: flex;
+    gap: 30px;
+}
+
+#futureRecommend {
+    font-size: large;
+}
