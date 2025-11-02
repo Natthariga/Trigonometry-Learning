@@ -76,11 +76,11 @@ const EditSubchapterModal = ({ subchapterData, onClose, onUpdated }) => {
                     ✕
                 </button>
                 <h1 className="text-[20px] font-semibold text-blue-800 mb-6 text-center">
-                    แก้ไขหัวข้อย่อย
+                    แก้ไขบทเรียน
                 </h1>
                 <form onSubmit={handleSubmit} className="space-y-5">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">ชื่อหัวข้อย่อย</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">ชื่อบทเรียน</label>
                         <input
                             type="text"
                             value={subchapterName}

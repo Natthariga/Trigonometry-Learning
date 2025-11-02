@@ -1,17 +1,18 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { io } from "socket.io-client";
 import {
   getChatsByTeacher,
   getTeacherMessages,
   uploadMessageFile,
-} from "../api/chats"; // แก้ path ให้ตรงโปรเจค
-import { getUserId, getFullName } from "../js/auth";
+  sendMessageAPI
+} from "../api/chats";
+import { getUserId } from "../js/auth";
 import Sidebar from "../components/sidebarAdmin";
 import { Paperclip } from "lucide-react";
+import { getFileUrl } from "../js/getFileUrl";
 
-// ✅ socket สร้างครั้งเดียว (global)
-const socket = io("http://localhost:3001", { withCredentials: true });
+const SOCKET_URL = "wss://socket-server-839f.onrender.com";
+// const SOCKET_URL = "http://localhost:3001"; 
 
 export default function CommunicationCenter() {
   const teacherId = Number(getUserId());
@@ -21,8 +22,18 @@ export default function CommunicationCenter() {
   const [input, setInput] = useState("");
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
+  const [chatId, setChatId] = useState(null);
 
-  // โหลดห้องแชทของครู
+  const [socket, setSocket] = useState(null);
+
+  // useEffect(() => {
+  //   const s = io(SOCKET_URL, { transports: ["websocket"] });
+  //   s.on("connect", () => console.log("✅ Teacher connected:", s.id));
+  //   s.on("connect_error", (err) => console.log("❌ Teacher socket connect error:", err));
+  //   setSocket(s);
+  //   return () => s.disconnect();
+  // }, []);
+
   useEffect(() => {
     if (!teacherId) return;
     const fetchChats = async () => {
@@ -32,34 +43,44 @@ export default function CommunicationCenter() {
     fetchChats();
   }, [teacherId]);
 
-  // ฟังข้อความใหม่จาก socket
   useEffect(() => {
-    socket.on("newMessage", (msg) => {
-      // append เฉพาะห้องที่ครูกำลังเปิดอยู่
+    if (!socket) return;
+
+    const handleNewMessage = (msg) => {
+      console.log("📩 Teacher received newMessage:", msg);
+
       if (msg.chat_id === selectedStudent?.chat_id) {
-        setChatMessages((prev) => {
-          if (prev.some((m) => m.message_id === msg.message_id)) return prev; // กันซ้ำ
-          return [...prev, msg];
-        });
+        setChatMessages((prev) => [...prev, msg]);
       }
-    });
-
-    return () => {
-      socket.off("newMessage");
     };
-  }, [selectedStudent]);
 
-  // เปิดห้องแชท
+    socket.on("newMessage", handleNewMessage);
+
+    return () => socket.off("newMessage", handleNewMessage);
+  }, [socket, selectedStudent]);
+
+
   const openChat = async (student) => {
     setSelectedStudent(student);
 
-    // join room
-    socket.emit("joinChat", student.chat_id);
+    setChatId(student.chat_id);
 
-    // โหลดข้อความเก่า
+    if (socket) {
+      console.log("👥 Teacher joining chat room:", student.chat_id);
+      socket.emit("joinChat", student.chat_id);
+    }
     const res = await getTeacherMessages(student.chat_id);
     if (res.status === "success") setChatMessages(res.messages);
   };
+
+  useEffect(() => {
+    if (!chatId) return;
+    const interval = setInterval(async () => {
+      const res = await getTeacherMessages(chatId);
+      if (res.status === "success") setChatMessages(res.messages);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [chatId]);
 
   // ส่งข้อความ
   const handleSend = async () => {
@@ -82,32 +103,33 @@ export default function CommunicationCenter() {
       }
     }
 
-    const payload = new FormData();
-    payload.append("chat_id", selectedStudent.chat_id);
-    payload.append("sender_id", teacherId);
-    payload.append("message_text", message_text);
-    payload.append("message_type", message_type);
-    payload.append("file_url", file_url || "");
-
-    const res = await axios.post("/api/chats/sendMessage.php", payload, {
-      withCredentials: true,
+    // 1️⃣ เก็บฐานข้อมูล
+    const res = await sendMessageAPI({
+      chat_id: selectedStudent.chat_id,
+      sender_id: teacherId,
+      message_text,
+      message_type,
+      file_url: file_url || "",
     });
 
-    if (res.data.status === "success") {
+    if (res.status === "success") {
       const newMsg = {
-        message_id: res.data.message_id,
+        message_id: res.message_id,
         chat_id: selectedStudent.chat_id,
         sender_id: teacherId,
         message_text,
         message_type,
         file_url,
         create_at: new Date().toISOString(),
-        first_name: getFullName().split(" ")[0],
-        last_name: getFullName().split(" ")[1] || "",
-        role: 1, // ครู
+        // first_name: getFullName().split(" ")[0],
+        // last_name: getFullName().split(" ")[1] || "",
+        role: 1,
       };
 
-      // ✅ ส่งให้ทุกคนในห้อง (รวมตัวเอง)
+      // 2️⃣ อัปเดต local state
+      setChatMessages((prev) => [...prev, newMsg]);
+
+      // 3️⃣ ส่งผ่าน Socket.IO ให้คนอื่นเห็นเรียลไทม์
       socket.emit("sendMessage", newMsg);
     }
 
@@ -116,11 +138,9 @@ export default function CommunicationCenter() {
     setPreview(null);
   };
 
-  // 🆕 ฟังก์ชันเลือกไฟล์แล้วแสดง preview
   const handleFileUpload = (file) => {
     if (!file) return;
     setFile(file);
-
     const previewUrl = URL.createObjectURL(file);
     setPreview({
       file,
@@ -132,6 +152,7 @@ export default function CommunicationCenter() {
   return (
     <div className="flex h-screen">
       <Sidebar />
+
       {/* Sidebar - รายชื่อนักเรียน */}
       <div className="w-1/4 border-r border-gray-200 p-4 overflow-y-auto">
         <h2 className="text-lg font-semibold mb-4">รายชื่อนักเรียน</h2>
@@ -157,7 +178,6 @@ export default function CommunicationCenter() {
               {selectedStudent.student_name}
             </div>
 
-            {/* แสดงข้อความ */}
             <div className="flex-1 p-4 overflow-y-auto">
               {chatMessages.map((msg) => (
                 <div
@@ -176,26 +196,23 @@ export default function CommunicationCenter() {
                     </div>
                   ) : msg.message_type === "image" ? (
                     <img
-                      src={`/api${msg.file_url}`}
+                      src={getFileUrl(msg.file_url)}
                       alt="ส่งมา"
                       className="max-w-[200px] rounded"
                     />
-                  ) : msg.message_type === "file" ? (
+                  ) : (
                     <a
-                      href={`/api${msg.file_url}`}
+                      href={getFileUrl(msg.file_url)}
                       target="_blank"
                       rel="noreferrer"
                       className="underline text-blue-600"
                     >
                       ดาวน์โหลดไฟล์
                     </a>
-                  ) : null}
+                  )}
                 </div>
               ))}
-            </div>
 
-
-            <div className="p-4 border-t border-gray-200">
               {/* preview file */}
               {preview && (
                 <div className="mb-2">
@@ -212,41 +229,37 @@ export default function CommunicationCenter() {
                   )}
                 </div>
               )}
-
-              {/* กล่องพิมพ์ */}
-              <div className="flex items-center">
-                {/* ปุ่มอัปโหลดไฟล์ */}
-                <label
-                  htmlFor="file-upload"
-                  className="cursor-pointer mr-2 flex items-center text-gray-600 hover:text-blue-500"
-                >
-                  <Paperclip size={20} />
-                </label>
-                <input
-                  id="file-upload"
-                  type="file"
-                  className="hidden"
-                  onChange={(e) => handleFileUpload(e.target.files[0])}
-                />
-
-                {/* กล่องข้อความ */}
-                <input
-                  type="text"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder="พิมพ์ข้อความ..."
-                  className="flex-1 border border-gray-200 rounded px-3 py-2 mr-2"
-                />
-
-                <button
-                  onClick={handleSend}
-                  className="bg-blue-500 text-white px-4 py-2 rounded"
-                >
-                  ส่ง
-                </button>
-              </div>
             </div>
 
+            <div className="p-4 border-t border-gray-200 flex items-center">
+              <label
+                htmlFor="file-upload"
+                className="cursor-pointer mr-2 flex items-center text-gray-600 hover:text-blue-500"
+              >
+                <Paperclip size={20} />
+              </label>
+              <input
+                id="file-upload"
+                type="file"
+                className="hidden"
+                onChange={(e) => handleFileUpload(e.target.files[0])}
+              />
+
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="พิมพ์ข้อความ..."
+                className="flex-1 border border-gray-200 rounded px-3 py-2 mr-2"
+              />
+
+              <button
+                onClick={handleSend}
+                className="bg-blue-500 text-white px-4 py-2 rounded"
+              >
+                ส่ง
+              </button>
+            </div>
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center text-gray-500">

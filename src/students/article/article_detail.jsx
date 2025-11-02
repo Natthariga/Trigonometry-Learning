@@ -11,6 +11,7 @@ import GeoGraph from "../../components/geogebra";
 import RenderContent from '../../components/katex';
 import Sidebar from "../../components/navBar";
 import MatchingGame from "./match_game";
+import { getFileUrl } from "../../js/getFileUrl";
 
 const ArticleDetail = () => {
     const { subchapterId } = useParams();
@@ -86,7 +87,7 @@ const ArticleDetail = () => {
                     <div key={content.id} className="py-4 p-10 border-b border-gray-200">
                         {content.type === "text" && (
                             <div className="text-black text-base leading-relaxed flex gap-4 flex-col md:flex-row justify-center items-center p-4">
-                                {content.image && (<img src={content.image} alt="text-content" className="w-[400px] flex-1 mt-3 max-w-full" />)}
+                                {content.image && (<img src={ getFileUrl(content.image)} alt="text-content" className="w-[400px] flex-1 mt-3 max-w-full" />)}
                                 <div className="flex-1">
                                     <RenderContent html={content.content} />
                                 </div>
@@ -97,7 +98,7 @@ const ArticleDetail = () => {
                             <div className="relative rounded-md border-2 border-transparent p-4 [background:linear-gradient(white,white)_padding-box,linear-gradient(to_right,#6b21a8,#3b82f6)_border-box] shadow-sm">
                                 <div className="absolute -top-3 left-4 bg-white px-2"><span className="font-semibold text-orange-600 py-1 px-2 rounded bg-red-500 text-white shadow-sm">นิยาม</span></div>
                                 <div className="text-black text-base leading-relaxed flex gap-4 flex-col md:flex-row justify-center items-center p-4">
-                                    {content.image && (<img src={content.image} alt="definition" className="w-[400px] flex-1 mt-3 max-w-full" />)}
+                                    {content.image && (<img src={ getFileUrl(content.image)} alt="definition" className="w-[400px] flex-1 mt-3 max-w-full" />)}
                                     <div className="flex-1">
                                         <RenderContent html={content.content} />
                                     </div>
@@ -110,7 +111,7 @@ const ArticleDetail = () => {
                             <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded">
                                 <p className="font-semibold text-[22px] text-red-700">ข้อควรระวัง!</p>
                                 <div className="flex flex-col md:flex-row justify-center items-center gap-4">
-                                    {content.image && (<img src={content.image} alt="warning" className="flex-1 w-[400px] flex-1 mt-3 max-w-full" />)}
+                                    {content.image && (<img src={ getFileUrl(content.image)} alt="warning" className="flex-1 w-[400px] flex-1 mt-3 max-w-full" />)}
                                     <div className="flex-1">
                                         <RenderContent html={content.content} />
                                     </div>
@@ -149,20 +150,20 @@ const ArticleDetail = () => {
                                         <RenderContent html={content.graphExplanation} />
                                     </div>
                                 </div>
-                                {content.image && (<img src={content.image} alt="graph" className="w-[400px] flex-1 mt-3 max-w-full items-center mx-auto" />)}
+                                {content.image && (<img src={ getFileUrl(content.image)} alt="graph" className="w-[400px] flex-1 mt-3 max-w-full items-center mx-auto" />)}
                             </div>
                         )}
 
-                        {content.type === "game" && content.questions && (
+                        {/* {content.type === "game" && content.questions && (
                             <div className="flex flex-col md:flex-row justify-between gap-3 text-[18px]">
                                 <div className="flex-1 border px-3 py-2 ">
                                     <MatchingGame questions={content.questions} content_id={content.id} />
                                 </div>
                             </div>
-                        )}
+                        )} */}
 
                         {content.type === "image" && content.image && (
-                            <img src={content.image} alt="content" className="max-w-full rounded-md shadow" />
+                            <img src={getFileUrl(content.image)} alt="content" className="max-w-full rounded-md shadow" />
                         )}
                     </div>
                 ))}

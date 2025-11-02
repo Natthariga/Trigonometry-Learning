@@ -411,7 +411,7 @@ const DefinitionInsert = () => {
             <div className="absolute left-0 top-0 h-full w-1 rounded-l-2xl bg-blue-500" />
 
             <div className="pl-4">
-              <h1 className="text-[22px] font-semibold text-blue-700">สรุปเนื้อหา</h1>
+              <h1 className="text-[22px] font-semibold text-blue-700">เพิ่มสรุปเนื้อหา</h1>
             </div>
             <span className="text-gray-500 text-sm">{getThaiDate()}</span>
           </div>

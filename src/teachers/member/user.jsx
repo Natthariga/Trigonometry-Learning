@@ -121,8 +121,8 @@ const MemberList = () => {
         <section className="flex min-h-screen">
             <Sidebar />
             <div className="p-8 w-full">
-                <div className="flex justify-between items-center mb-4">
-                    <div>
+                <div className="flex flex-col sm:flex-row justify-between items-center mb-4 mt-4 md:mt-0">
+                    <div className="w-full mb-2">
                         <h2 className="text-[22px] font-semibold text-gray-800">
                             รายชื่อสมาชิกทั้งหมด
                         </h2>
@@ -131,13 +131,15 @@ const MemberList = () => {
                         </p>
                     </div>
 
-                    <SearchAndSort
-                        searchTerm={searchTerm}
-                        setSearchTerm={setSearchTerm}
-                        sortValue={sortOption}
-                        onSortChange={(v) => setSortOption(v)}
-                        sortOptions={sortOptions}
-                    />
+                    <div className="w-full sm:w-auto">
+                        <SearchAndSort
+                            searchTerm={searchTerm}
+                            setSearchTerm={setSearchTerm}
+                            sortValue={sortOption}
+                            onSortChange={(v) => setSortOption(v)}
+                            sortOptions={sortOptions}
+                        />
+                    </div>
                 </div>
 
                 <div className="bg-white rounded-xl border border-gray-100 p-6">
@@ -179,19 +181,20 @@ const MemberList = () => {
                             <FaPlus className="w-4 h-4" />
                         </button>
                     </div>
+                    <hr className="pb-4 border-gray-200" />
 
                     <div className="overflow-x-auto">
                         <table className="min-w-full text-sm bg-white rounded-md">
                             <thead className="text-gray-700 text-center">
                                 <tr className="">
-                                    <th className=""></th>
-                                    <th className="">ชื่อ</th>
-                                    <th className="">บัญชีผู้ใช้</th>
+                                    <th className="text-center px-4 py-2 whitespace-nowrap"></th>
+                                    <th className="text-center px-4 py-2 whitespace-nowrap">ชื่อ</th>
+                                    <th className="text-center px-4 py-2 whitespace-nowrap">บัญชีผู้ใช้</th>
                                     {showClassroom && (
-                                        <th className="">ห้องเรียน</th>
+                                        <th className="text-center px-4 py-2 whitespace-nowrap">ห้องเรียน</th>
                                     )}
                                     {showTeacher && (
-                                        <th className="">ครูผู้สอน</th>
+                                        <th className="text-center px-4 py-2 whitespace-nowrap">ครูผู้สอน</th>
                                     )}
                                     <th className="">สถานะ</th>
                                     <th className=""></th>
@@ -199,24 +202,24 @@ const MemberList = () => {
                             </thead>
                             <tbody className="text-left">
                                 {filteredUsers.map((user, index) => (
-                                    <tr key={user.user_id} className="text-gray-600">
+                                    <tr key={user.user_id} className="text-gray-600 add:bg-white even:bg-gray-100">
                                         <td className="px-4 py-2 text-gray-500 text-center">{index + 1}</td>
-                                        <td className="pl-6 py-2">{user.name}</td>
-                                        <td className="pl-6 py-2">{user.username}</td>
+                                        <td className="px-6 py-2 whitespace-nowrap">{user.name}</td>
+                                        <td className="px-6 py-2 whitespace-nowrap text-center">{user.username}</td>
                                         {showClassroom && (
-                                            <td className="px-4 py-2 text-center">
+                                            <td className="px-4 py-2 text-center whitespace-nowrap">
                                                 {user.classrooms.length > 0
                                                     ? user.classrooms.join(", ")
                                                     : "-"}
                                             </td>
                                         )}
                                         {showTeacher && (
-                                            <td className="px-4 py-2 text-center">
+                                            <td className="px-4 py-2 text-center whitespace-nowrap">
                                                 {user.role === "teacher" ? "-" : user.teacher_name || "-"}
                                             </td>
                                         )}
 
-                                        <td className="px-4 py-2 text-center">
+                                        <td className="px-4 py-2 text-center whitespace-nowrap">
                                             {user.status === "active" ? (
                                                 <span className="text-green-700 inline-flex items-center gap-1 px-1 py-1 text-[10px] rounded">
                                                     <FaCheckCircle className="w-3 h-3" /> กำลังใช้งาน

@@ -36,9 +36,3 @@
     transform: rotate(360deg);
   }
 }
-
-
-.note-capture {
-    background-color: white !important; 
-    color: black !important;
-}

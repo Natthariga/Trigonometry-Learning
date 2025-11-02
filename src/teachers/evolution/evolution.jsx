@@ -109,7 +109,7 @@ export default function ProgressDashboard() {
     return (
         <section className="flex min-h-screen">
             <Sidebar />
-            <div className="flex-1 p-8 space-y-8">
+            <div className="flex-1 p-8 space-y-8 mt-5 md:mt-0">
                 {/* Toolbar ฟิลเตอร์ */}
                 <div className="bg-white rounded-xl shadow p-4 flex flex-wrap items-center gap-4">
                     {/* ห้องเรียน */}
@@ -180,13 +180,13 @@ export default function ProgressDashboard() {
                 </div>
 
                 {/* Charts */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <VideoChart students={filtered} selectedLesson={selectedLesson} />
                     {/* <PrePostChart students={filtered} /> */}
-                    <QuizChart students={filtered} />
+                    <QuizChart students={filtered} selectedLesson={selectedLesson}  />
                 </div>
 
-                {/* ✅ ตารางสรุป */}
+                {/* ตารางสรุป */}
                 <div className="bg-white rounded-xl shadow p-6">
                     <h3 className="font-semibold mb-4">รายชื่อนักเรียน</h3>
                     <table className="w-full text-sm">
@@ -195,8 +195,8 @@ export default function ProgressDashboard() {
                                 <th className="py-2">ชื่อ</th>
                                 <th className="py-2">ห้อง</th>
                                 <th className="py-2 text-center">ดูคลิปวิดีโอ</th>
-                                <th className="py-2 text-center">คะแนนสอบก่อนเรียน</th>
-                                <th className="py-2 text-center">คะแนนสอบหลังเรียน</th>
+                                {/* <th className="py-2 text-center">คะแนนสอบก่อนเรียน</th>
+                                <th className="py-2 text-center">คะแนนสอบหลังเรียน</th> */}
                             </tr>
                         </thead>
                         <tbody>
@@ -209,12 +209,15 @@ export default function ProgressDashboard() {
                                     <td className="py-2">{s.classroom}</td>
                                     <td className="py-2 text-center">
                                         {selectedLesson !== "all" ? (
-                                            // 📌 กรณีเลือกฟิลเตอร์บทเรียน
+                                            // กรณีเลือกฟิลเตอร์บทเรียน
                                             <span className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded">
-                                                {s.subchapters?.[parseInt(selectedLesson)] === 1
-                                                    ? "1/1 คลิป"
-                                                    : "0/1 คลิป"}
+                                                {(() => {
+                                                    const subs = Array.isArray(s.subchapters) ? {} : s.subchapters || {};
+                                                    const lessonData = subs[String(selectedLesson)];
+                                                    return lessonData?.watched_to_end === 1 ? "1/1 คลิป" : "0/1 คลิป";
+                                                })()}
                                             </span>
+
                                         ) : (
                                             // 📌 กรณีรวมทุกบทเรียน
                                             <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-700 rounded">
@@ -223,8 +226,8 @@ export default function ProgressDashboard() {
                                         )}
                                     </td>
 
-                                    <td className="py-2 text-center">{s.pre_avg ?? "-"}</td>
-                                    <td className="py-2 text-center">{s.post_avg ?? "-"}</td>
+                                    {/* <td className="py-2 text-center">{s.pre_avg ?? "-"}</td>
+                                    <td className="py-2 text-center">{s.post_avg ?? "-"}</td> */}
                                     {/* <td className="py-2 text-center">
                     {s.quiz_correct}/{s.quiz_total}
                   </td> */}

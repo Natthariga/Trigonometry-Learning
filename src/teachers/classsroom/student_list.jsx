@@ -122,11 +122,11 @@ const StudentList = () => {
   return (
     <section className="flex min-h-screen">
       <Sidebar />
-      <div className="p-8 w-full">
-        <div className="flex justify-between items-center mb-4">
-          <div>
-            <div className="flex items-center gap-4">
-              <h2 className="text-[22px] font-semibold text-gray-800">
+      <div className="p-8 w-full mt-5 md:mt-0">
+        <div className="flex justify-between items-center mb-4 flex-col sm:flex-row">
+          <div className="w-full mb-2">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+              <h2 className="text-[22px] font-semibold text-blue-900">
                 รายชื่อนักเรียนห้อง {classroomId}
               </h2>
               {/* <button
@@ -144,8 +144,8 @@ const StudentList = () => {
           </div>
 
           {/* Search + Sort */}
-          <div className="flex items-center gap-3 relative">
-            <div className="relative">
+          <div className="flex gap-2 w-full justify-end">
+            <div className="relative w-full sm:w-auto mb-2 sm:mb-0 flex gap-3">
               <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
                 <FaSearch className="h-4 w-4" />
               </span>
@@ -154,11 +154,11 @@ const StudentList = () => {
                 placeholder="ค้นหา"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 pr-3 py-1 border border-gray-300 rounded-md text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
-            <div className="relative">
+            <div className="relative self-start md:self-auto">
               <button
                 onClick={() => setShowSortMenu(!showSortMenu)}
                 className="p-2 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-100 focus:outline-none"
@@ -188,25 +188,25 @@ const StudentList = () => {
         </div>
 
         {/* Table */}
-        <div className="bg-white rounded-xl border border-gray-100 p-6">
+        <div className="bg-white rounded-xl border border-gray-100 p-6 overflow-auto">
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm bg-white rounded-md">
               <thead className="text-gray-700">
                 <tr>
                   <th className="px-4 py-2 text-center w-12"></th>
-                  <th className="px-4 py-2 text-center">ชื่อ</th>
-                  <th className="px-4 py-2 text-center">รหัสประจำตัวนักเรียน</th>
-                  <th className="px-4 py-2 text-center">สถานะ</th>
+                  <th className="px-4 py-2 text-center whitespace-nowrap">ชื่อ</th>
+                  <th className="px-4 py-2 text-center whitespace-nowrap">รหัสประจำตัวนักเรียน</th>
+                  <th className="px-4 py-2 text-center whitespace-nowrap">สถานะ</th>
                   {/* <th className="px-4 py-2 text-center"></th> */}
                 </tr>
               </thead>
               <tbody>
                 {filteredUsers.map((user, index) => (
-                  <tr key={user.id} className="text-gray-600 text-center">
+                  <tr key={user.id} className="text-gray-600 text-center even:bg-white odd:bg-gray-100">
                     <td className="px-4 py-2 text-center text-gray-500">{index + 1}</td>
-                    <td className="px-4 py-2 text-left">{user.name}</td>
-                    <td className="pl-4 py-2 ">{user.student_code}</td>
-                    <td className="px-4 py-2 ">
+                    <td className="px-4 py-2 text-left whitespace-nowrap">{user.name}</td>
+                    <td className="pl-4 py-2 whitespace-nowrap">{user.student_code}</td>
+                    <td className="px-4 py-2 whitespace-nowrap">
                       {user.status === "active" ? (
                         <span className="text-green-700 inline-flex items-center gap-1 px-1 py-1 text-[10px] rounded">
                           <FaCheckCircle className="w-3 h-3" /> กำลังใช้งาน

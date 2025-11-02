@@ -8,11 +8,9 @@ import {
 } from "../api/chats";
 import { getUserId } from "../js/auth";
 import Sidebar from "../components/sidebarAdmin";
-import { Paperclip } from "lucide-react";
+import { Paperclip, MessageCircle } from "lucide-react";
 import { getFileUrl } from "../js/getFileUrl";
-
-const SOCKET_URL = "wss://socket-server-839f.onrender.com";
-// const SOCKET_URL = "http://localhost:3001"; 
+import { ChatImage } from "../components/chat_image";
 
 export default function CommunicationCenter() {
   const teacherId = Number(getUserId());
@@ -24,16 +22,6 @@ export default function CommunicationCenter() {
   const [preview, setPreview] = useState(null);
   const [chatId, setChatId] = useState(null);
 
-  const [socket, setSocket] = useState(null);
-
-  // useEffect(() => {
-  //   const s = io(SOCKET_URL, { transports: ["websocket"] });
-  //   s.on("connect", () => console.log("✅ Teacher connected:", s.id));
-  //   s.on("connect_error", (err) => console.log("❌ Teacher socket connect error:", err));
-  //   setSocket(s);
-  //   return () => s.disconnect();
-  // }, []);
-
   useEffect(() => {
     if (!teacherId) return;
     const fetchChats = async () => {
@@ -44,7 +32,6 @@ export default function CommunicationCenter() {
   }, [teacherId]);
 
   useEffect(() => {
-    if (!socket) return;
 
     const handleNewMessage = (msg) => {
       console.log("📩 Teacher received newMessage:", msg);
@@ -54,10 +41,7 @@ export default function CommunicationCenter() {
       }
     };
 
-    socket.on("newMessage", handleNewMessage);
-
-    return () => socket.off("newMessage", handleNewMessage);
-  }, [socket, selectedStudent]);
+  }, [selectedStudent]);
 
 
   const openChat = async (student) => {
@@ -65,10 +49,6 @@ export default function CommunicationCenter() {
 
     setChatId(student.chat_id);
 
-    if (socket) {
-      console.log("👥 Teacher joining chat room:", student.chat_id);
-      socket.emit("joinChat", student.chat_id);
-    }
     const res = await getTeacherMessages(student.chat_id);
     if (res.status === "success") setChatMessages(res.messages);
   };
@@ -103,7 +83,7 @@ export default function CommunicationCenter() {
       }
     }
 
-    // 1️⃣ เก็บฐานข้อมูล
+    // เก็บฐานข้อมูล
     const res = await sendMessageAPI({
       chat_id: selectedStudent.chat_id,
       sender_id: teacherId,
@@ -126,11 +106,8 @@ export default function CommunicationCenter() {
         role: 1,
       };
 
-      // 2️⃣ อัปเดต local state
+      //อัปเดต local state
       setChatMessages((prev) => [...prev, newMsg]);
-
-      // 3️⃣ ส่งผ่าน Socket.IO ให้คนอื่นเห็นเรียลไทม์
-      socket.emit("sendMessage", newMsg);
     }
 
     setInput("");
@@ -154,14 +131,18 @@ export default function CommunicationCenter() {
       <Sidebar />
 
       {/* Sidebar - รายชื่อนักเรียน */}
-      <div className="w-1/4 border-r border-gray-200 p-4 overflow-y-auto">
-        <h2 className="text-lg font-semibold mb-4">รายชื่อนักเรียน</h2>
+      <div className={`w-full md:w-1/4 border-r border-gray-200 p-4 overflow-y-auto mt-5 md:mt-0
+                  ${selectedStudent && "hidden sm:block md:block"}`}>
+        <div className="border-b-2 flex items-center md:justify-between gap-4 py-4">
+          <h2 className="text-xl font-semibold text-center text-blue-900 flex gap-1 items-center border py-1 px-2 rounded border-gray-100"><MessageCircle size={16} />กล่องข้อความ</h2>
+          <div className="w-5 h-5 bg-blue-950 rounded-full flex  justify-center items-center text-white font-bold ">{students.length}</div>
+        </div>
         {students.map((student) => (
           <div
             key={student.chat_id}
-            className={`p-2 cursor-pointer rounded ${selectedStudent?.chat_id === student.chat_id
-              ? "bg-blue-100"
-              : "hover:bg-gray-100"
+            className={`p-2 cursor-pointer mt-2 flex items-center gap-2 rounded ${selectedStudent?.chat_id === student.chat_id
+              ? "bg-blue-950 text-white shadow-lg"
+              : "text-gray-900 border-b border-gray-100 hover:bg-blue-200"
               }`}
             onClick={() => openChat(student)}
           >
@@ -174,32 +155,53 @@ export default function CommunicationCenter() {
       <div className="flex-1 flex flex-col">
         {selectedStudent ? (
           <>
-            <div className="p-4 border-b border-gray-200 font-semibold">
-              {selectedStudent.student_name}
+            {/* ปุ่มย้อนกลับ */}
+            <div className="p-4 border-b border-gray-200 flex items-center gap-2">
+              <button
+                onClick={() => setSelectedStudent(null)}
+                className="sm:hidden flex items-center text-blue-600 hover:underline"
+              >
+                ←
+              </button>
+              <span className="font-semibold">{selectedStudent.student_name}</span>
             </div>
 
-            <div className="flex-1 p-4 overflow-y-auto">
+            <div className="flex-1 p-4 pt-4 overflow-y-auto">
               {chatMessages.map((msg) => (
                 <div
                   key={msg.message_id}
-                  className={`mb-2 flex ${msg.sender_id === teacherId ? "justify-end" : "justify-start"
+                  className={`mb-4 flex ${msg.sender_id === teacherId ? "justify-end" : "justify-start"
                     }`}
                 >
                   {msg.message_type === "text" ? (
-                    <div
-                      className={`p-2 rounded-lg max-w-xs ${msg.sender_id === teacherId
-                        ? "bg-blue-500 text-white"
-                        : "bg-gray-200 text-black"
-                        }`}
-                    >
-                      {msg.message_text}
+                    <div>
+                      <div
+                        className={`p-2 rounded-lg max-w-xs ${msg.sender_id === teacherId
+                            ? "bg-blue-500 text-white"
+                            : "bg-gray-200 text-black"
+                          }`}
+                      >
+                        {msg.message_text}
+                      </div>
+                      <div className="mt-2 text-[12px] text-gray-600">
+                        {new Date(msg.create_at).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: true,
+                        })}
+                      </div>
                     </div>
                   ) : msg.message_type === "image" ? (
-                    <img
-                      src={getFileUrl(msg.file_url)}
-                      alt="ส่งมา"
-                      className="max-w-[200px] rounded"
-                    />
+                    <div>
+                      <ChatImage file_url={msg.file_url} />
+                      <div className="mt-2 text-[12px] text-gray-600">
+                        {new Date(msg.create_at).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: true,
+                        })}
+                      </div>
+                    </div>
                   ) : (
                     <a
                       href={getFileUrl(msg.file_url)}
@@ -263,7 +265,6 @@ export default function CommunicationCenter() {
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center text-gray-500">
-            เลือกห้องแชทจากด้านซ้าย
           </div>
         )}
       </div>

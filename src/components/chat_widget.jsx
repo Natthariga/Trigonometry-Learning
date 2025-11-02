@@ -9,10 +9,7 @@ import {
 } from "../api/chats";
 import { getUserId } from "../js/auth";
 import { getFileUrl } from "../js/getFileUrl";
-import { io } from "socket.io-client";
-
-const SOCKET_URL = "wss://socket-server-839f.onrender.com";
-// const SOCKET_URL = "http://localhost:3001";
+import { ChatImage } from "./chat_image";
 
 export default function ChatWidget() {
   const studentId = Number(getUserId());
@@ -23,30 +20,19 @@ export default function ChatWidget() {
   const [input, setInput] = useState("");
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
-  const [socket, setSocket] = useState(null);
+
+  const messagesEndRef = React.useRef(null);
 
   const toggleChat = () => setIsOpen(!isOpen);
-
-  // ⚡ เชื่อม Socket.IO
-  // useEffect(() => {
-  //   const s = io(SOCKET_URL, { transports: ["websocket"] });
-
-  //   s.on("connect", () => console.log("✅ Student connected:", s.id));
-  //   s.on("connect_error", (err) => console.warn("❌ Student socket connect error:", err));
-  //   s.on("disconnect", (reason) => console.log("⚡ Student disconnected:", reason));
-
-  //   setSocket(s);
-  //   return () => s.disconnect();
-  // }, []);
-
   // init chat
   useEffect(() => {
-    if (!isOpen || !studentId || !socket) return;
+    if (!isOpen || !studentId) return;
 
     const initChat = async () => {
-      console.log("🔹 Initializing student chat...");
+      // console.log("🔹 Initializing student chat...");
 
       const res = await getHomeroomTeacher(studentId);
+
       if (res.status !== "success") return;
 
       setTeacher(res.teacher);
@@ -58,20 +44,14 @@ export default function ChatWidget() {
         return;
       }
 
-      console.log("👥 Student joining chat room:", chatData.chat_id);
-      socket.emit("joinChat", chatData.chat_id);
-
-      socket.on("newMessage", (msg) => {
-        console.log("📩 Student received newMessage:", msg);
-        if (msg.chat_id === chatData.chat_id) setMessages((prev) => [...prev, msg]);
-      });
+      // console.log("👥 Student joining chat room:", chatData.chat_id);
 
       const msgData = await getStudentMessages(chatData.chat_id);
       if (msgData.status === "success") setMessages(msgData.messages);
     };
 
     initChat();
-  }, [isOpen, studentId, socket]);
+  }, [isOpen, studentId]);
 
   // polling ข้อความเก่า (สำรอง)
   useEffect(() => {
@@ -82,6 +62,12 @@ export default function ChatWidget() {
     }, 3000);
     return () => clearInterval(interval);
   }, [chatId]);
+
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
 
   const handleFileChange = (e) => {
     const selected = e.target.files[0];
@@ -134,14 +120,10 @@ export default function ChatWidget() {
         message_type,
         file_url,
         create_at: new Date().toISOString(),
-        // first_name: getFullName().split(" ")[0],
-        // last_name: getFullName().split(" ")[1] || "",
         role: 2,
       };
 
       setMessages((prev) => [...prev, newMsg]);
-
-      socket.emit("sendMessage", newMsg);
     }
 
     setInput("");
@@ -170,30 +152,49 @@ export default function ChatWidget() {
               const isMine = Number(msg.role) === 2;
               return (
                 <div
-                  key={`${msg.message_id}-${idx}`} // ✅ unique key
-                  className={`mb-2 ${isMine ? "text-right" : "text-left"}`}
+                  key={`${msg.message_id}-${idx}`} //unique key
+                  className={`mb-4 ${isMine ? "text-right" : "text-left"}`}
                 >
                   {msg.message_type === "text" && (
-                    <div className={`inline-block px-3 py-2 rounded-lg ${isMine ? "bg-blue-100" : "bg-gray-200"}`}>
-                      {msg.message_text}
+                    <div>
+                      <div className={`inline-block px-3 py-2 rounded-lg ${isMine ? "bg-blue-100" : "bg-gray-200"}`}>
+                        {msg.message_text}
+                      </div>
+                      <div className="mt-2 text-[12px] text-gray-600">
+                        {new Date(msg.create_at).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: true
+                        })}
+                      </div>
                     </div>
                   )}
                   {msg.message_type === "image" && (
-                    <img
-                      src={getFileUrl(msg.file_url)}
-                      alt="uploaded"
-                      className="max-w-[150px] rounded-lg inline-block"
-                    />
+                    <div>
+                      <ChatImage file_url={msg.file_url} />
+
+                      <div className="mt-2 text-[12px] text-gray-600">
+                        {new Date(msg.create_at).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: true
+                        })}
+                      </div>
+                    </div>
                   )}
+
                   {msg.message_type === "file" && (
-                    <a
-                      href={getFileUrl(msg.file_url)} // ต้องใช้ href ไม่ใช่ src
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-blue-600 underline"
-                    >
-                      📎 ดาวน์โหลดไฟล์
-                    </a>
+                    <div>
+                      <a
+                        href={getFileUrl(msg.file_url)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className={`inline-block px-3 py-2 rounded-lg ${isMine ? "bg-blue-100" : "bg-gray-200"}`}
+                      >
+                        {msg.file_url.split('/').pop()}
+                      </a>
+                      <div className="mt-2 text-[12px] text-gray-600">{msg.time}</div>
+                    </div>
                   )}
                 </div>
               );
@@ -220,6 +221,9 @@ export default function ChatWidget() {
                 </button>
               </div>
             )}
+
+            <div ref={messagesEndRef} />
+
           </div>
 
           {/* Input */}

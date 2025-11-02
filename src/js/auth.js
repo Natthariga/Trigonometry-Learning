@@ -1,7 +1,7 @@
 // เก็บข้อมูล user ลง localStorage
 export const login = (userData) => {
   localStorage.setItem('username', JSON.stringify(userData));
-    console.log("✅ User saved in localStorage:", userData);
+    // console.log("✅ User saved in localStorage:", userData);
 };
 
 // export const login = (userData) => {

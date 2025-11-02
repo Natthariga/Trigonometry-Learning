@@ -42,7 +42,7 @@ const Addsubchapter = ({ chapterID, onClose, onAdded }) => {
             if (res.status === "success") {
                 Swal.fire({
                     icon: "success",
-                    title: "เพิ่มหัวข้อย่อยสำเร็จ",
+                    title: "เพิ่มบทเรียนสำเร็จ",
                     confirmButtonText: "ตกลง",
                 }).then(() => {
                     if (onAdded) onAdded();
@@ -76,11 +76,11 @@ const Addsubchapter = ({ chapterID, onClose, onAdded }) => {
                     ✕
                 </button>
                 <h1 className="text-2xl font-semibold text-blue-800 mb-6 text-center">
-                    เพิ่มหัวข้อย่อย
+                    เพิ่มบทเรียน
                 </h1>
                 <form onSubmit={handleSubmit} className="space-y-5">
                     <div>
-                        <label className="block md:text-md font-medium text-gray-700 mb-1">ชื่อหัวข้อย่อย</label>
+                        <label className="block md:text-md font-medium text-gray-700 mb-1">ชื่อบทเรียน</label>
                         <input
                             type="text"
                             value={subchapterName}

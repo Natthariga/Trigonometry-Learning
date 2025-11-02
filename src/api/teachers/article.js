@@ -53,7 +53,7 @@ export const saveAllToServer = async (title, contentList, subchapter_id) => {
                 text: 'บันทึกเนื้อหาสำเร็จ',
                 confirmButtonText: 'ตกลง',
             }).then(() => {
-                window.location.href = '/teacher/article';
+                window.location.href = '/teacher/subchapter';
             });
         } else {
             Swal.fire({
@@ -98,13 +98,13 @@ export const getArticleDetail = async (articleId) => {
         if (!data.success) return null;
         const article = {
             ...data.article,
-            articles_id: data.article.id, // ✅ แก้จาก articles_id เป็น id
+            articles_id: data.article.id, //
             contentList: data.article.contentList.map(content => ({
                 ...content,
-                contents_id: content.contents_id, // ✅ ใช้ตรงกับ PHP
+                contents_id: content.contents_id, //
                 questions: content.questions ? content.questions.map(q => ({
                     ...q,
-                    game_questions_id: q.game_questions_id // ✅ ใช้ตรงกับ PHP
+                    game_questions_id: q.game_questions_id //
                 })) : []
             }))
         };
@@ -118,10 +118,6 @@ export const getArticleDetail = async (articleId) => {
 // แก้ไขบทความ
 export const handleSaveChanges = async (articleId, articleTitle, editableContents) => {
     try {
-        console.log("===== Prepare to save =====");
-        console.log("Article ID:", articleId);
-        console.log("Title:", articleTitle);
-
         editableContents.forEach((c, idx) => {
             if (c.type === "game") {
                 console.log("Game content idx=" + idx + ", id=" + c.id);
@@ -140,7 +136,7 @@ export const handleSaveChanges = async (articleId, articleTitle, editableContent
             }
         });
 
-        const res = await http.post('http://localhost/trigo/teachers/article/edit_article.php', formData, {
+        const res = await http.post('teachers/article/edit_article.php', formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
             responseType: 'json' // บังคับ axios แปลง response
         });
@@ -162,7 +158,7 @@ export const handleSaveChanges = async (articleId, articleTitle, editableContent
                 text: "บันทึกการแก้ไขสำเร็จ",
                 icon: "success",
                 confirmButtonText: "ตกลง",
-            }).then(() => { window.location.href = '/teacher/article' });
+            }).then(() => { window.location.href = '/teacher/subchapter' });
         } else {
             Swal.fire({
                 text: "เกิดข้อผิดพลาด: " + data.message,

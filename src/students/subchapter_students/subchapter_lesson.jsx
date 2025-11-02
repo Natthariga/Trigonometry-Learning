@@ -2,8 +2,6 @@ import React, { useRef, useState, useEffect } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import Sidebar from "../../components/navBar";
 import "../../style/lessons.css";
-import icon1 from "../../assets/icon1.png";
-import icon2 from "../../assets/icon2.png";
 import SubchapterPopup from "./subchapter_popup";
 import { handleAnswered } from "../../api/students/popup";
 import { getUserId } from "../../js/auth";
@@ -11,8 +9,40 @@ import { getFileUrl } from "../../js/getFileUrl";
 import Footer from "../../components/footer";
 import Swal from "sweetalert2";
 import { getPopups, getSubchapterDetail, toggleFavorite, checkFavorite, getProgress, updateProgress } from "../../api/students/subchapter";
+import { Book, Gamepad2Icon, Sheet } from "lucide-react";
+import { FaGamepad } from "react-icons/fa";
+
+import { getArticleDetail } from "../../api/students/article";
+import MatchingGame from "../article/match_game";
 
 const Lessons = (isFavoritedInitial = false) => {
+    //game
+    const [showGame, setShowGame] = useState(false);
+    const [gameData, setGameData] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const handleOpenGame = async (subchapterId) => {
+        setLoading(true);
+        try {
+            const data = await getArticleDetail(subchapterId);
+            const gameContent = data.contentList.find((c) => c.type === "game");
+            if (!gameContent) {
+                Swal.fire({
+                    icon: "info",
+                    title: "ยังไม่มีเกมในบทเรียนนี้",
+                    confirmButtonText: "ตกลง",
+                });
+                return;
+            }
+            setGameData(gameContent);
+            setShowGame(true);
+        } catch (err) {
+            Swal.fire({ icon: "error", title: "เกิดข้อผิดพลาดในการโหลดเกม" });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    //------
     const location = useLocation();
     const subchapterId = location.state?.subchapterId;
     const [data, setData] = useState(null);
@@ -310,7 +340,7 @@ const Lessons = (isFavoritedInitial = false) => {
         try {
             const data = await toggleFavorite(subchapterId);
             if (data.status === "success") {
-                setIsFavorited(data.isFavorited === true); // ✅ ใช้ค่าที่ backend ส่งมา
+                setIsFavorited(data.isFavorited === true); // ใช้ค่าที่ backend ส่งมา
             }
         } catch (err) {
             console.error("toggle favorite error:", err);
@@ -325,8 +355,8 @@ const Lessons = (isFavoritedInitial = false) => {
                 {data && (
                     <>
                         {/* Title */}
-                        <div className="flex justify-between items-center mb-6">
-                            <h1 className="text-3xl font-bold text-indigo-700">
+                        <div className="flex justify-between items-center mb-6 gap-4">
+                            <h1 className="text-xl md:text-3xl font-bold text-indigo-700">
                                 {data?.subchapter_name}
                             </h1>
                             <button
@@ -336,14 +366,21 @@ const Lessons = (isFavoritedInitial = false) => {
                                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                                     }`}
                             >
-                                {isFavorited ? "❤️ บทเรียนที่ชอบแล้ว" : "🤍 เพิ่มในบทเรียนที่ชอบ"}
+                                {/* แสดงเฉพาะอิโมจิบนมือถือ */}
+                                <span className="inline md:hidden">
+                                    {isFavorited ? "❤️" : "🤍"}
+                                </span>
+
+                                {/* แสดงทั้งอิโมจิ + ข้อความบน Desktop */}
+                                <span className="hidden md:inline">
+                                    {isFavorited ? "❤️ บทเรียนที่ชอบแล้ว" : "🤍 เพิ่มในบทเรียนที่ชอบ"}
+                                </span>
                             </button>
+
                         </div>
 
-
-
                         {/* Content grid */}
-                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                        <div>
                             {/* Video Section */}
                             <div className="lg:col-span-7 space-y-4">
                                 <div className="relative bg-black rounded-2xl overflow-hidden border border-gray-200">
@@ -408,11 +445,11 @@ const Lessons = (isFavoritedInitial = false) => {
                             </div>
 
                             {/* Sidebar Resources */}
-                            <aside className="space-y-6 lg:col-span-5">
-                                <div className="p-6 bg-white rounded-2xl shadow hover:shadow-xl transform hover:scale-105 transition cursor-pointer">
+                            <aside className="space-y-4 lg:col-span-5 mt-4">
+                                <div className="p-6 bg-white rounded-2xl shadow hover:shadow-xl transform hover:scale-105 transition cursor-pointer hover:bg-gray-100">
                                     <Link to={`/article/${subchapterId}`} target="_blank" rel="noopener noreferrer">
                                         <div className="flex items-center gap-6">
-                                            <img src={icon1} alt="icon" className="w-12 h-14 mb-3" />
+                                            <Book className="w-12 h-14 mb-3 text-green-600" ></Book>
                                             <h2 className="font-semibold text-gray-800 text-lg">สรุปเนื้อหา</h2>
                                         </div>
                                     </Link>
@@ -421,16 +458,49 @@ const Lessons = (isFavoritedInitial = false) => {
                                 <div
                                     onClick={() => {
                                         if (data?.subchapter_file) {
-                                            window.open(getFileUrl(data.subchapter_file),"_blank");
+                                            window.open(getFileUrl(data.subchapter_file), "_blank");
                                         }
                                     }}
-                                    className="p-6 bg-white rounded-2xl shadow hover:shadow-xl transform hover:scale-105 transition cursor-pointer"
+                                    className="p-6 bg-white rounded-2xl shadow hover:shadow-xl transform hover:scale-105 transition cursor-pointer hover:bg-gray-100"
                                 >
                                     <div className="flex items-center gap-6">
-                                        <img src={icon2} alt="icon" className="w-12 h-14 mb-3" />
+                                        <Sheet className="w-12 h-14 mb-3 text-orange-600" ></Sheet>
                                         <h2 className="font-semibold text-gray-800 text-lg">เอกสารประกอบ</h2>
                                     </div>
                                 </div>
+
+                                <div
+                                    onClick={() => handleOpenGame(subchapterId)}
+                                    className="p-6 bg-white rounded-2xl shadow hover:shadow-xl transform hover:scale-105 transition cursor-pointer hover:bg-gray-100"
+                                >
+                                    <div className="flex items-center gap-6">
+                                        <FaGamepad className="w-12 h-14 mb-3 text-blue-600" />
+                                        <h2 className="font-semibold text-gray-800 text-lg">เกมจับคู่</h2>
+                                    </div>
+                                </div>
+
+                                {showGame && gameData && (
+                                    <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50">
+                                        <div className="bg-white rounded-2xl shadow-lg p-6 w-[95%] max-w-3xl relative">
+                                            <button
+                                                onClick={() => setShowGame(false)}
+                                                className="absolute top-2 right-3 text-gray-500 hover:text-red-500 text-xl"
+                                            >
+                                                ✕
+                                            </button>
+                                            <MatchingGame
+                                                questions={gameData.questions}
+                                                content_id={gameData.id}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {loading && (
+                                    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center text-white text-xl">
+                                        กำลังโหลดเกม...
+                                    </div>
+                                )}
 
                             </aside>
 

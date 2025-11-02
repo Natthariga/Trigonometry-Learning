@@ -19,34 +19,31 @@ export default function QuizChart({ students, selectedLesson }) {
   let data = [];
   let footerText = "";
 
-if (selectedLesson && selectedLesson !== "all") {
-  let done = 0;
-  let notDone = 0;
+  if (selectedLesson && selectedLesson !== "all") {
+    // กรณีเลือกบทเรียนเฉพาะ
+    let done = 0;
+    let notDone = 0;
 
-  students.forEach((s) => {
-    const subs = s.subchapters || {};
-    const quizDone =
-      subs[selectedLesson]?.quiz_done ??
-      subs[String(selectedLesson)]?.quiz_done ??
-      0;
+    students.forEach((s) => {
+      // แปลง [] เป็น object กัน error
+      const subs = Array.isArray(s.subchapters) ? {} : s.subchapters || {};
+      const quizDone = subs[String(selectedLesson)]?.quiz_done ?? 0;
 
-    if (quizDone === 1) done++;
-    else notDone++;
-  });
+      if (quizDone === 1) done++;
+      else notDone++;
+    });
 
-  data = [
-    { name: "ทำแล้ว", value: done },
-    { name: "ยังไม่ทำ", value: notDone },
-  ];
+    data = [
+      { name: "ทำแล้ว", value: done },
+      { name: "ยังไม่ทำ", value: notDone },
+    ];
 
-  footerText = `นักเรียนที่ทำแบบทดสอบบทเรียนนี้ ${done} / ${students.length} คน`;
-}
- else if (students.length === 1) {
-    // 📌 โหมดนักเรียนคนเดียว
+    footerText = `นักเรียนที่ทำแบบทดสอบบทเรียนนี้ ${done} / ${students.length} คน`;
+  } else if (students.length === 1) {
+    // โหมดนักเรียนคนเดียว
     const s = students[0];
-    const subs = s.subchapters || {};
+    const subs = Array.isArray(s.subchapters) ? {} : s.subchapters || {};
 
-    // ✅ ใช้จำนวนบทเรียนทั้งหมด ไม่ใช่เฉพาะที่นักเรียนมี record
     const totalLessons = window.allLessonsCount || Object.keys(subs).length || 0;
     const doneCount = Object.values(subs).filter((x) => x.quiz_done === 1).length;
 
@@ -56,14 +53,13 @@ if (selectedLesson && selectedLesson !== "all") {
     ];
 
     footerText = `ทำแล้ว ${doneCount} / ${totalLessons} บทเรียน`;
-  }
-  else {
-    // 📌 โหมดรวมหลายคน
+  } else {
+    // โหมดรวมหลายคน
     let doneStudents = 0;
     let notDoneStudents = 0;
 
     students.forEach((s) => {
-      const subs = s.subchapters || {};
+      const subs = Array.isArray(s.subchapters) ? {} : s.subchapters || {};
       const doneCount = Object.values(subs).filter((x) => x.quiz_done === 1).length;
 
       if (doneCount > 0) doneStudents++;

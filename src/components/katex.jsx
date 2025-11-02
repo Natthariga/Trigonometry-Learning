@@ -5,8 +5,17 @@ import 'katex/dist/katex.min.css';
 const RenderContent = ({ html }) => {
   if (!html) return null;
 
+  // แก้ทุกกรณีที่เจอ
+  let decodedHTML = html
+    .replace(/&gt;/g, '>')          // &gt; → >
+    .replace(/&lt;/g, '<')          // &lt; → <
+    .replace(/&nbsp;/g, ' ')        // &nbsp; → ช่องว่าง
+    .replace(/\\r\\n/g, '\n')       // literal \r\n → newline
+    .replace(/\r\n/g, '\n')         // เผื่อมีจริง
+    .replace(/\\n/g, '\n');         // literal \n → newline
+
   const regex = /(?:\\\(|\\\\\()(.*?)(?:\\\)|\\\\\))/g;
-  const lines = html.split('\n');
+  const lines = decodedHTML.split('\n');
   let globalIndex = 0;
 
   const renderedLines = lines.map((line, lineIdx) => {
@@ -46,7 +55,16 @@ const RenderContent = ({ html }) => {
     }
 
     return (
-      <div key={lineIdx} style={{ display: 'block', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>{parts}</div>
+      <div
+        key={lineIdx}
+        style={{
+          display: 'block',
+          lineHeight: '1.6',
+          whiteSpace: 'pre-wrap',
+        }}
+      >
+        {parts}
+      </div>
     );
   });
 

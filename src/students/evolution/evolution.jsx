@@ -68,24 +68,32 @@ const Evolution = () => {
 
     // ---------- สรุปภาพรวม ----------
     const summaryOverview = React.useMemo(() => {
-        if (!summary || summary.length === 0) return { total_lessons: 0, developed_count: 0, developed_percent: 0 };
+        const lesson = summary.find(item => item.subchapter_id === selectedSubchapter);
+        if (!lesson || !lesson.attempts || lesson.attempts.length === 0) {
+            return { total_lessons: 0, developed_count: 0, developed_percent: 0 };
+        }
 
-        let developedCount = 0;
-        summary.forEach(item => {
-            const attempts = item.attempts || [];
-            if (attempts.length > 0) {
-                const last = attempts[attempts.length - 1];
-                const pre = last.pretest_score !== "-" ? last.pretest_score : 0;
-                const post = last.posttest_score !== "-" ? last.posttest_score : 0;
-                if (post > pre) developedCount++;
+        let totalProgress = 0;
+        let totalAttempts = 0;
+
+        lesson.attempts.forEach(a => {
+            if (a.progress_percent !== "-" && a.progress_percent !== null) {
+                totalProgress += Number(a.progress_percent);
+                totalAttempts++;
             }
         });
 
-        const totalLessons = summary.length;
-        const developedPercent = totalLessons ? Math.round((developedCount / totalLessons) * 100) : 0;
-        return { total_lessons: totalLessons, developed_count: developedCount, developed_percent: developedPercent };
-    }, [summary]);
+        const developedPercent =
+            totalAttempts > 0 ? Math.round(totalProgress / totalAttempts) : 0;
 
+        return {
+            total_lessons: 1,             // แค่โชว์บทที่เลือก
+            developed_count: totalAttempts, // จำนวนรอบของบทนั้นๆ
+            developed_percent: developedPercent
+        };
+    }, [summary, selectedSubchapter]);
+
+    
     // ---------- สรุปภาพรวมของบทเรียนที่เลือก ----------
     const selectedLessonOverview = React.useMemo(() => {
         const lesson = summary.find(item => item.subchapter_id === selectedSubchapter);
@@ -168,12 +176,10 @@ const Evolution = () => {
                                         สรุปภาพรวม
                                     </td>
                                     <td
-                                        className={`px-3 py-4 text-center font-bold ${selectedLessonOverview.progress_percent > 0
-                                                ? "text-green-600"
-                                                : "text-red-600"
+                                        className={`px-3 py-4 text-center font-bold ${summaryOverview.developed_percent > 0 ? "text-green-600" : "text-red-600"
                                             }`}
                                     >
-                                        {selectedLessonOverview.progress_percent}%
+                                        {summaryOverview.developed_percent}%
                                     </td>
                                 </tr>
                             </tbody>

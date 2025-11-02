@@ -17,7 +17,7 @@ export const startChat = async (teacherId, studentId) => {
     const { data } = await http.post(`/chats/student_chat.php`, formData, {
         headers: { "Content-Type": "multipart/form-data" }, // สำคัญ
     });
-     return data;
+    return data;
 };
 
 export const getStudentMessages = async (chatId) => {

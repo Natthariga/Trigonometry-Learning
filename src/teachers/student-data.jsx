@@ -3,6 +3,8 @@ import * as XLSX from "xlsx";
 import Swal from "sweetalert2";
 import Sidebar from "../components/sidebarAdmin";
 import StudentForm from "./student-form";
+import { FaPlus } from "react-icons/fa";
+import { Plus } from "lucide-react";
 import { getStudentListApi, saveStudentListApi } from "../api/teachers/student-data";
 
 const StudentListPage = () => {
@@ -205,23 +207,37 @@ const StudentListPage = () => {
     <section className="flex h-screen overflow-hidden w-full">
       <Sidebar />
       <div className="flex-1 p-12 overflow-auto">
-        <h2 className="text-2xl font-bold mb-6">รายชื่อนักเรียน</h2>
+        <div className="flex items-center justify-between mt-5 mb-5 md:mt-0">
+          <h2 className="text-2xl font-bold text-blue-900">
+            รายชื่อนักเรียน
+          </h2>
 
-        <div className="flex flex-wrap gap-4 mb-6">
-
-          <button
-            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-            onClick={() => setShowForm(true)}
+          <div
+            className="flex items-center gap-2 cursor-pointer px-2 py-1 rounded-lg bg-blue-600 hover:bg-blue-700"
+            onClick={() => setShowForm(true)} title="เพิ่มนักเรียน"
           >
-            เพิ่มนักเรียน
-          </button>
+            <div className="flex items-center justify-center  text-white rounded-full py-2 px-1">
+              <Plus size={17} />
+            </div>
+            <span className="text-white font-medium hidden md:inline">เพิ่มนักเรียน</span>
+          </div>
 
-          <input
-            type="file"
-            accept=".xlsx, .xls"
-            onChange={handleFileUpload}
-            className="border border-gray-300 px-3 py-2 rounded"
-          />
+        </div>
+
+
+        <div className="flex flex-wrap gap-2 mb-8 items-start">
+
+          <div className="flex flex-col w-full sm:w-auto">
+            <input
+              type="file"
+              accept=".xlsx, .xls"
+              onChange={handleFileUpload}
+              className="border border-gray-300 px-3 py-2 rounded w-full"
+            />
+            <label className="text-sm text-red-500 mt-1 font-semibold">
+              ** ไฟล์นามสกุล xlsx, xls **
+            </label>
+          </div>
 
           <button
             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
@@ -238,15 +254,16 @@ const StudentListPage = () => {
           </button>
         </div>
 
+
         <div className="overflow-x-auto max-h-[500px] rounded border border-gray-300">
           <table className="min-w-full border-collapse border border-gray-200">
             <thead className="bg-gray-100 sticky top-0">
               <tr>
-                <th className="border border-gray-200 px-4 py-2">ลำดับ</th>
-                <th className="border border-gray-200 px-4 py-2">ชั้น/ห้อง</th>
-                <th className="border border-gray-200 px-4 py-2">เลขที่</th>
-                <th className="border border-gray-200 px-4 py-2">เลขประจำตัว</th>
-                <th className="border border-gray-200 px-4 py-2">ชื่อ - นามสกุล</th>
+                <th className="border border-gray-200 px-4 py-2 ">ลำดับ</th>
+                <th className="border border-gray-200 px-4 py-2 whitespace-nowrap">ชั้น/ห้อง</th>
+                <th className="border border-gray-200 px-4 py-2 whitespace-nowrap">เลขที่</th>
+                <th className="border border-gray-200 px-4 py-2 whitespace-nowrap">เลขประจำตัว</th>
+                <th className="border border-gray-200 px-4 py-2 whitespace-nowrap">ชื่อ - นามสกุล</th>
               </tr>
             </thead>
             <tbody>
@@ -254,10 +271,10 @@ const StudentListPage = () => {
                 students.map((s, idx) => (
                   <tr key={s.student_id} className={idx % 2 === 0 ? "bg-gray-50" : "bg-white"}>
                     <td className="border border-gray-200 px-4 py-2">{idx + 1}</td>
-                    <td className="border border-gray-200 px-4 py-2">{s.classroom_name}</td>
-                    <td className="border border-gray-200 px-4 py-2">{s.student_number}</td>
-                    <td className="border border-gray-200 px-4 py-2">{s.student_id}</td>
-                    <td className="border border-gray-200 px-4 py-2">{s.fullname}</td>
+                    <td className="border border-gray-200 px-4 py-2 whitespace-nowrap text-center">{s.classroom_name}</td>
+                    <td className="border border-gray-200 px-4 py-2 whitespace-nowrap text-center">{s.student_number}</td>
+                    <td className="border border-gray-200 px-4 py-2 whitespace-nowrap">{s.student_id}</td>
+                    <td className="border border-gray-200 px-4 py-2 whitespace-nowrap">{s.fullname}</td>
                   </tr>
                 ))
               ) : (

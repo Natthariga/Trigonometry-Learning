@@ -90,9 +90,9 @@ const AddStudentForm = ({ onClose, refreshList }) => {
   };
 
   return (
-    <div className="fixed inset-0 flex justify-center items-center z-50">
-      <div className="bg-white p-6 rounded shadow-lg w-full max-w-md">
-        <h2 className="text-xl font-bold mb-4 text-center">เพิ่มนักเรียน</h2>
+    <div className="fixed inset-0 flex justify-center items-center z-50 px-2">
+      <div className="bg-white p-6 rounded shadow-lg w-full max-w-md border border-gray-100">
+        <h2 className="text-xl font-bold mb-4 text-center text-blue-900">เพิ่มนักเรียน</h2>
         <form onSubmit={handleSubmit} className="space-y-3">
           {/* prefix */}
           <div>

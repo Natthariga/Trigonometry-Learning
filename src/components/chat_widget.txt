@@ -1,20 +1,21 @@
 import React, { useState, useEffect } from "react";
-import { io } from "socket.io-client";
 import { MessageCircle, X, Paperclip } from "lucide-react";
 import {
   getHomeroomTeacher,
   startChat,
   getStudentMessages,
   uploadMessageFile,
+  sendMessageAPI
 } from "../api/chats";
-import { getUserId, getFullName } from "../js/auth";
-import axios from "axios";
+import { getUserId } from "../js/auth";
+import { getFileUrl } from "../js/getFileUrl";
+// import { io } from "socket.io-client";
 
-const socket = io("http://localhost:3001", { withCredentials: true });
-const BASE_URL = "/api";
+// const SOCKET_URL = "wss://socket-server-839f.onrender.com";
+// const SOCKET_URL = "http://localhost:3001";
 
 export default function ChatWidget() {
-  const studentId = Number(getUserId()); // ✅ นักเรียนที่ล็อกอิน
+  const studentId = Number(getUserId());
   const [isOpen, setIsOpen] = useState(false);
   const [teacher, setTeacher] = useState(null);
   const [chatId, setChatId] = useState(null);
@@ -22,40 +23,66 @@ export default function ChatWidget() {
   const [input, setInput] = useState("");
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
+  const [socket, setSocket] = useState(null);
 
   const toggleChat = () => setIsOpen(!isOpen);
 
-  // ✅ init chat
+  // ⚡ เชื่อม Socket.IO
+  // useEffect(() => {
+  //   const s = io(SOCKET_URL, { transports: ["websocket"] });
+
+  //   s.on("connect", () => console.log("✅ Student connected:", s.id));
+  //   s.on("connect_error", (err) => console.warn("❌ Student socket connect error:", err));
+  //   s.on("disconnect", (reason) => console.log("⚡ Student disconnected:", reason));
+
+  //   setSocket(s);
+  //   return () => s.disconnect();
+  // }, []);
+
+  // init chat
   useEffect(() => {
-    if (!isOpen || !studentId) return;
+    if (!isOpen || !studentId || !socket) return;
+
     const initChat = async () => {
+      console.log("🔹 Initializing student chat...");
+
       const res = await getHomeroomTeacher(studentId);
-      if (res.status === "success") {
-        setTeacher(res.teacher);
+      if (res.status !== "success") return;
 
-        const chatData = await startChat(res.teacher.teacher_id, studentId);
-        setChatId(chatData.chat_id);
+      setTeacher(res.teacher);
+      const chatData = await startChat(res.teacher.teacher_id, studentId);
+      setChatId(chatData.chat_id);
 
-        const msgData = await getStudentMessages(chatData.chat_id);
-        if (msgData.status === "success") setMessages(msgData.messages);
-
-        socket.emit("joinChat", chatData.chat_id);
+      if (!chatData.chat_id) {
+        console.error("❌ chat_id undefined");
+        return;
       }
+
+      console.log("👥 Student joining chat room:", chatData.chat_id);
+      socket.emit("joinChat", chatData.chat_id);
+
+      socket.on("newMessage", (msg) => {
+        console.log("📩 Student received newMessage:", msg);
+        if (msg.chat_id === chatData.chat_id) setMessages((prev) => [...prev, msg]);
+      });
+
+      const msgData = await getStudentMessages(chatData.chat_id);
+      if (msgData.status === "success") setMessages(msgData.messages);
     };
-    initChat();
-  }, [isOpen, studentId]);
 
-  // ✅ ฟังข้อความใหม่จาก socket
+    initChat();
+  }, [isOpen, studentId, socket]);
+
+  // polling ข้อความเก่า (สำรอง)
   useEffect(() => {
-    socket.on("newMessage", (msg) => {
-      if (msg.chat_id === chatId) {
-        setMessages((prev) => [...prev, msg]);
-      }
-    });
-    return () => socket.off("newMessage");
+    if (!chatId) return;
+    const interval = setInterval(async () => {
+      const res = await getStudentMessages(chatId);
+      if (res.status === "success") setMessages(res.messages);
+    }, 3000);
+    return () => clearInterval(interval);
   }, [chatId]);
 
-  // ✅ จัดการไฟล์
   const handleFileChange = (e) => {
     const selected = e.target.files[0];
     if (selected) {
@@ -68,27 +95,16 @@ export default function ChatWidget() {
     setPreview(null);
   };
 
-  // ✅ ส่งข้อความ/ไฟล์
   const handleSend = async () => {
-    if (!input.trim() && !file) {
-      console.warn("⚠️ ไม่มีข้อความหรือไฟล์ที่จะส่ง");
-      return;
-    }
-    if (!chatId) {
-      console.warn("⚠️ ยังไม่มี chatId");
-      return;
-    }
+    if (!input.trim() && !file) return;
+    if (!chatId) return;
 
     let message_type = "text";
     let message_text = input;
     let file_url = null;
 
-    // 📂 ถ้ามีไฟล์ → upload ก่อน
     if (file) {
-      console.log("📂 Uploading file:", file.name);
       const uploadRes = await uploadMessageFile(file);
-      console.log("📥 Upload response:", uploadRes);
-
       if (uploadRes.status === "success") {
         message_type = uploadRes.file_type;
         message_text = "";
@@ -99,41 +115,35 @@ export default function ChatWidget() {
       }
     }
 
-    // 📌 ส่งไป PHP
-    const payload = new FormData();
-    payload.append("chat_id", chatId);
-    payload.append("sender_id", studentId); // ✅ นักเรียนส่ง
-    payload.append("message_text", message_text);
-    payload.append("message_type", message_type);
-    payload.append("file_url", file_url || "");
+    const payload = {
+      chat_id: chatId,
+      sender_id: studentId,
+      message_text,
+      message_type,
+      file_url: file_url || ""
+    };
 
-    const res = await axios.post("/api/chats/sendMessage.php", payload, {
-      withCredentials: true,
-    });
+    const res = await sendMessageAPI(payload);
 
-    console.log("📥 API response:", res.data);
-
-    if (res.data.status === "success") {
+    if (res.status === "success") {
       const newMsg = {
-        message_id: res.data.message_id,
+        message_id: res.message_id,
         chat_id: chatId,
         sender_id: studentId,
         message_text,
         message_type,
         file_url,
         create_at: new Date().toISOString(),
-        first_name: getFullName().split(" ")[0],
-        last_name: getFullName().split(" ")[1] || "",
-        role: 2, // 👈 นักเรียน fix ให้ชัดเจน
+        // first_name: getFullName().split(" ")[0],
+        // last_name: getFullName().split(" ")[1] || "",
+        role: 2,
       };
-      // setMessages((prev) => [...prev, newMsg]);
+
+      setMessages((prev) => [...prev, newMsg]);
 
       socket.emit("sendMessage", newMsg);
-
     }
 
-
-    // reset input
     setInput("");
     setFile(null);
     setPreview(null);
@@ -156,10 +166,13 @@ export default function ChatWidget() {
 
           {/* Messages */}
           <div className="flex-1 p-3 overflow-y-auto text-sm">
-            {messages.map((msg) => {
-              const isMine = Number(msg.role) === 2; // นักเรียน = 2
+            {messages.map((msg, idx) => {
+              const isMine = Number(msg.role) === 2;
               return (
-                <div key={msg.message_id} className={`mb-2 ${isMine ? "text-right" : "text-left"}`}>
+                <div
+                  key={`${msg.message_id}-${idx}`} // ✅ unique key
+                  className={`mb-2 ${isMine ? "text-right" : "text-left"}`}
+                >
                   {msg.message_type === "text" && (
                     <div className={`inline-block px-3 py-2 rounded-lg ${isMine ? "bg-blue-100" : "bg-gray-200"}`}>
                       {msg.message_text}
@@ -167,14 +180,14 @@ export default function ChatWidget() {
                   )}
                   {msg.message_type === "image" && (
                     <img
-                      src={`${BASE_URL}${msg.file_url}`}
+                      src={getFileUrl(msg.file_url)}
                       alt="uploaded"
                       className="max-w-[150px] rounded-lg inline-block"
                     />
                   )}
                   {msg.message_type === "file" && (
                     <a
-                      href={`${BASE_URL}${msg.file_url}`}
+                      href={getFileUrl(msg.file_url)} // ต้องใช้ href ไม่ใช่ src
                       target="_blank"
                       rel="noreferrer"
                       className="text-blue-600 underline"

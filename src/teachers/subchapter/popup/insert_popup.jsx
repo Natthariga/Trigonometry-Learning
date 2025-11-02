@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { HelpCircle } from "lucide-react"; 
 import { FaPlus } from "react-icons/fa";
 import { getUserId } from '../../../js/auth';
 import Swal from "sweetalert2";
@@ -225,7 +226,7 @@ export default function PopupModal({ isOpen, onClose, subchapterId, onSuccess, v
             onClick={onClose}
         >
             <div
-                className="bg-white rounded-lg shadow-lg max-w-2xl w-full px-6 pb-5 relative overflow-y-auto max-h-[90vh] my-6 mx-4"
+                className="bg-white rounded-lg shadow-lg max-w-2xl w-full px-6 pb-5 relative overflow-y-auto max-h-[90vh] my-6 mx-4 border border-gray-200"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* <button className="absolute top-3 right-3 text-gray-500 hover:text-gray-700" onClick={onClose}>✕</button> */}
@@ -264,7 +265,10 @@ export default function PopupModal({ isOpen, onClose, subchapterId, onSuccess, v
                     {forms.map((form, idx) => (
                         <div key={idx} className=" p-4 rounded shadow">
                             <div className="flex justify-between items-center mb-3">
-                                <p className="text-xl font-medium text-blue-600">คำถามที่ {idx + 1}</p>
+                                <div className="inline-flex gap-1 border px-2 py-1 rounded-2xl border-gray-200">
+                                    <HelpCircle className="text-blue-700" />
+                                    <span className="text-lg font-semibold text-blue-800">คำถาม {idx + 1}</span>
+                                </div>
                                 {forms.length > 1 && (
                                     <button
                                         type="button"

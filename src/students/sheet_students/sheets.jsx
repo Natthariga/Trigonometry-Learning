@@ -7,7 +7,7 @@ import { FaPlus } from "react-icons/fa";
 import { getUserId } from '../../js/auth';
 import AddSheet from "./add_sheet";
 import EditSheet from './edit_sheet';
-import { getSheets, getFavoriteSheets, toggleFavoriteSheet, deleteSheet } from "../../api/students/sheet";
+import { getSheets, getFavoriteSheets, toggleFavoriteSheet, deleteSheet, incrementViewCount } from "../../api/students/sheet";
 import { getFileUrl } from '../../js/getFileUrl';
 
 
@@ -91,6 +91,25 @@ const Sheet = () => {
         });
     };
 
+    // เพิ่มวิว
+    const handleOpenPdf = async (sheet) => {
+        setSelectedPdf(sheet.pdf_file);
+        try {
+            const res = await incrementViewCount(sheet.sheet_id);
+            if (res.success) {
+                setSheets(prev =>
+                    prev.map(s =>
+                        Number(s.sheet_id) === Number(sheet.sheet_id)
+                            ? { ...s, view_count: res.view_count }
+                            : s
+                    )
+                );
+            }
+        } catch (err) {
+            console.error("Cannot increment view count:", err);
+        }
+    };
+
     const filteredSheets = sheets.filter(sheet => {
         if (filter === 'favorites') {
             return favoriteSheetIds.includes(Number(sheet.sheet_id));
@@ -106,42 +125,43 @@ const Sheet = () => {
     return (
         <section className="flex flex-col min-h-screen">
             <Sidebar isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
-            <div className="flex-1 p-8 pt-32 w-full overflow-y-auto px-24 bg-gray-50 min-h-screen">
+            <div className="flex-1 p-8 pt-32 w-full overflow-y-auto px-16 bg-gray-50 min-h-screen">
+
                 <div className="flex justify-between items-center mb-6">
-                    <div className='flex gap-3'>
+                    <div className='flex gap-3 overflow-x-auto flex-nowrap hide-scroller'>
                         <button
                             onClick={() => setFilter('all')}
-                            className={`flex items-center gap-2 px-2 py-2 rounded-full ${filter === 'all' ? 'bg-blue-600 text-white' : 'bg-white shadow text-black'}`}
+                            className={`flex items-center gap-2 px-2 py-2 rounded-full ${filter === 'all' ? 'bg-blue-600 text-white' : 'bg-white shadow text-black'}`} title='ทั้งหมด'
                         >
                             <div className="w-6 h-6 flex items-center justify-center rounded-full bg-blue-100 text-blue-600">
                                 <Layers size={14} />
                             </div>
-                            <p className={`${filter === 'all' ? '!text-white' : 'text-black'} px-2`}>ทั้งหมด</p>
+                            <p className={`${filter === 'all' ? '!text-white' : 'text-black'} px-2 ${filter === 'all' ? 'block' : 'hidden'} md:block`}>ทั้งหมด</p>
                         </button>
 
                         <button
                             onClick={() => setFilter('favorites')}
-                            className={`flex items-center gap-2 px-2 py-2 rounded-full ${filter === 'favorites' ? 'bg-blue-600 text-white' : 'bg-white shadow text-black'}`}
+                            className={`flex items-center gap-2 px-2 py-2 rounded-full ${filter === 'favorites' ? 'bg-blue-600 text-white' : 'bg-white shadow text-black'}`} title='รายการโปรด'
                         >
                             <div className="w-6 h-6 flex items-center justify-center rounded-full bg-blue-100 text-blue-600">
                                 <Heart size={14} />
                             </div>
-                            <p className={`${filter === 'favorites' ? '!text-white' : 'text-black'} px-2`}>รายการโปรด</p>
+                            <p className={`${filter === 'favorites' ? '!text-white' : 'text-black'} px-2 ${filter === 'favorites' ? 'block' : 'hidden'} md:block`}>รายการโปรด</p>
                         </button>
 
                         <button
                             onClick={() => setFilter('mine')}
-                            className={`flex items-center gap-2 px-2 py-2 rounded-full ${filter === 'mine' ? 'bg-blue-600 text-white' : 'bg-white shadow text-black'}`}
+                            className={`flex items-center gap-2 px-2 py-2 rounded-full ${filter === 'mine' ? 'bg-blue-600 text-white' : 'bg-white shadow text-black'}`} title='รายการของฉัน'
                         >
                             <div className="w-6 h-6 flex items-center justify-center rounded-full bg-blue-100 text-blue-600">
                                 <User size={14} />
                             </div>
-                            <p className={`${filter === 'mine' ? '!text-white' : 'text-black'} px-2`}>รายการของฉัน</p>
+                            <p className={`${filter === 'mine' ? '!text-white' : 'text-black'} px-2 ${filter === 'mine' ? 'block' : 'hidden'} md:block`}>รายการของฉัน</p>
                         </button>
 
                     </div>
 
-                    <div>
+                    <div className='flex-shrink-0 mt-2 sm:mt-0'>
                         <button
                             onClick={() => setShowPopup(true)}
                             className="flex justify-center items-center w-10 h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow transition duration-200 transform hover:scale-105">
@@ -160,25 +180,21 @@ const Sheet = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-6">
                     {filteredSheets.map(sheet => (
                         <div key={sheet.sheet_id} className="relative max-w-sm bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-lg hover:scale-[1.02] hover:border-blue-100 transition-all duration-300 ease-in-out">
-                            {/* แทนที่ Link ด้วย div เพราะไม่ต้องลิงก์ไปหน้าอื่น */}
+                            {/* sheet */}
                             <div>
                                 {sheet.cover_image ? (
                                     <img
                                         className="rounded-t-lg w-full h-48 object-cover cursor-pointer"
-                                        src={getFileUrl(sheet.cover_image)} // <-- ใช้ helper แทน
+                                        src={getFileUrl(sheet.cover_image)}
                                         alt={sheet.title}
-                                        onClick={() => {
-                                            console.log("แต่ละชีท:", sheet);
-                                            console.log('Selected PDF:', sheet.pdf_file);
-                                            setSelectedPdf(sheet.pdf_file);
-                                        }}
+                                        onClick={() => handleOpenPdf(sheet)}
                                     />
                                 ) : (
                                     <img
                                         className="rounded-t-lg w-24 h-32 mx-auto my-4 cursor-pointer"
                                         src="https://cdn-icons-png.flaticon.com/512/337/337946.png"
                                         alt="default icon"
-                                        onClick={() => setSelectedPdf(sheet.pdf_file)}
+                                        onClick={() => handleOpenPdf(sheet)}
                                     />
                                 )}
                             </div>
@@ -233,7 +249,7 @@ const Sheet = () => {
 
                     {/* แสดง pdf ถ้ามีการเลือก */}
                     {selectedPdf && (
-                        <div className="fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center z-50">
+                        <div className="fixed inset-0 bg-black/80 flex justify-center items-center z-50">
                             <div className="relative w-4/5 h-4/5 bg-white rounded shadow-lg">
                                 <button
                                     onClick={() => setSelectedPdf(null)}

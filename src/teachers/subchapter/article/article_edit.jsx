@@ -1,13 +1,15 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
-import { getArticleDetail, handleSaveChanges, deleteGameQuestion } from "../../../api/teachers/article";
+import { getArticleDetail, handleSaveChanges, deleteGameQuestion, deleteArticle } from "../../../api/teachers/article";
 import { MoveRight, Trash2 } from "lucide-react";
-import RenderContent from './extend/katex';
+import RenderContent from '../../../components/katex';
 import Swal from "sweetalert2";
 import Sidebar from "../../../components/sidebarAdmin";
+import { useLocation } from "react-router-dom";
 
 const ArticleEdit = () => {
-    const { id } = useParams();
+    const location = useLocation();
+    const { id } = location.state || {};
     const [article, setArticle] = useState(null);
     const [loading, setLoading] = useState(true);
     const [editableContents, setEditableContents] = useState([]);
@@ -29,7 +31,8 @@ const ArticleEdit = () => {
                 setArticle({ ...data, contentList: sortedContents });
                 setEditableContents(sortedContents.map(c => ({
                     ...c,
-                    type: c.type || "text", 
+                    id: c.contents_id,
+                    type: c.type || "text",
                     questions: Array.isArray(c.questions) ? c.questions.map(q => ({
                         id: q.id,
                         question: q.question || "",
@@ -82,6 +85,37 @@ const ArticleEdit = () => {
             }
             return newContent;
         });
+    };
+
+    const handleDelete = async (id) => {
+        const confirm = await
+            Swal.fire({
+                text: 'ต้องการลบบทความนี้หรือไม่?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'ตกลง',
+                cancelButtonText: 'ยกเลิก',
+            });
+        if (confirm.isConfirmed) {
+            const data = await deleteArticle(id);
+            if (data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    text: 'ลบเนื้อหาสำเร็จ',
+                    confirmButtonText: 'ตกลง',
+                }).then(() => {
+                    window.location.href = '/teacher/subchapter';
+                });
+            }
+            // if (data.success) {
+            //     Swal.fire('สำเร็จ', data.message, 'success');
+            //     window.location.href = '/teacher/subchapter';
+            //     // setArticles(prev => prev.filter(a => a.articles_id !== id));
+            // }
+            else {
+                Swal.fire('ผิดพลาด', data.message, 'error');
+            }
+        }
     };
 
     const handleDeleteQuestion = async (contentId, qIdx) => {
@@ -197,7 +231,8 @@ const ArticleEdit = () => {
                     </div>
                 ))}
 
-                <div className="flex justify-end py-4">
+                <div className="flex justify-end py-4 gap-3">
+                    <button onClick={() => handleDelete(id)} className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700">ลบสรุปเนื้อหา</button>
                     <button onClick={() => handleSaveChanges(id, article.title, prepareContentsForSave())} className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">บันทึกการแก้ไข</button>
                 </div>
             </div>

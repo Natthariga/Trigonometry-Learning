@@ -57,6 +57,7 @@ const EditProfileModal = ({ isOpen, onClose, userId, onUpdateUser }) => {
         setForm(updatedUser);
         onUpdateUser?.(updatedUser);
         Swal.fire("สำเร็จ", "อัปโหลดรูปโปรไฟล์เรียบร้อย", "success");
+        onClose();
       } else {
         Swal.fire("ผิดพลาด", data.message, "error");
       }
@@ -83,6 +84,7 @@ const EditProfileModal = ({ isOpen, onClose, userId, onUpdateUser }) => {
         Swal.fire("สำเร็จ", "รหัสผ่านถูกอัปเดตแล้ว", "success");
         setPassword("");
         setConfirmPassword("");
+        onClose();
       } else {
         Swal.fire("ผิดพลาด", data.message, "error");
       }
@@ -95,7 +97,7 @@ const EditProfileModal = ({ isOpen, onClose, userId, onUpdateUser }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
       <div className="bg-white rounded-xl shadow-lg w-full max-w-lg p-6 relative">
         <button
           onClick={onClose}

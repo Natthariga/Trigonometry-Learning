@@ -20,27 +20,40 @@ export default function VideoChart({ students, selectedLesson }) {
   let footerText = "";
 
   if (selectedLesson && selectedLesson !== "all") {
-  let completed = 0;
-  let notCompleted = 0;
+    let completed = 0;
+    let notCompleted = 0;
+    const lessonKey = String(selectedLesson);
 
-  students.forEach((s) => {
-    const subs = s.subchapters || {};
-    const progress =
-      subs[selectedLesson] ?? subs[String(selectedLesson)] ?? 0;
+    students.forEach((s) => {
+      let subs = s.subchapters || {};
 
-    if (progress === 1) completed++;
-    else notCompleted++;
-  });
+      // ✅ รองรับกรณีที่เป็น array [] ด้วย
+      if (Array.isArray(subs)) subs = {};
 
-  data = [
-    { name: "ดูจบแล้ว", value: completed },
-    { name: "ยังไม่จบ", value: notCompleted },
-  ];
+      // ✅ ปรับ key ให้เป็น string ทั้งหมด
+      const normalizedSubs = Object.keys(subs).reduce((acc, key) => {
+        acc[String(key)] = subs[key];
+        return acc;
+      }, {});
 
-  footerText = `นักเรียนที่ดูจบบทเรียนนี้ ${completed} / ${students.length} คน`;
-}
- else if (students.length === 1) {
-    // ✅ กรณีเลือกนักเรียนเดียว
+      const lessonData = normalizedSubs[lessonKey];
+      const watched = lessonData?.watched_to_end === 1;
+
+      if (watched) completed++;
+      else notCompleted++;
+    });
+
+    data = [
+      { name: "ดูจบแล้ว", value: completed },
+      { name: "ยังไม่จบ", value: notCompleted },
+    ];
+
+    footerText = `นักเรียนที่ดูจบบทเรียนนี้ ${completed} / ${students.length} คน`;
+  }
+
+
+  else if (students.length === 1) {
+    // กรณีเลือกนักเรียนเดียว
     const s = students[0];
     const completed = s.video_completed || 0;
     const total = s.video_total || 0;
@@ -51,7 +64,7 @@ export default function VideoChart({ students, selectedLesson }) {
     ];
     footerText = `ดูจบแล้ว ${completed} / ${total} คลิป`;
   } else {
-    // ✅ กรณีภาพรวม
+    // กรณีภาพรวม
     let completedStudents = 0;
     let notCompletedStudents = 0;
 

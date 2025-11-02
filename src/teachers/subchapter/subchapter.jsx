@@ -14,6 +14,7 @@ import EditSubchapterModal from './edit_subchapter';
 import PopupModal from './popup/insert_popup';
 import { getSubchapters, deleteSubchapter } from '../../api/teachers/subchapter';
 import SubchapterActions from './SubchapterActions';
+import { getArticles } from '../../api/teachers/article';
 
 const Subchapter = () => {
     const { subchapter_id } = useParams();
@@ -39,15 +40,24 @@ const Subchapter = () => {
     const fetchSubchapters = async () => {
         try {
             const resp = await getSubchapters();
+            const articles = await getArticles();
+
             if (resp.status === 'success' && resp.data) {
                 const subchapterData = Array.isArray(resp.data) ? resp.data : [resp.data];
-                const validSubchapters = subchapterData.filter(item => item && Object.keys(item).length > 0);
+                const validSubchapters = subchapterData
+                    .filter(item => item && Object.keys(item).length > 0)
+                    .map(sub => ({
+                        ...sub,
+                        hasArticle: articles.some(a => a.subchapter_id === sub.subchapter_id), // เช็กว่ามีบทความใน subchapter นี้ไหม
+                        articleId: articles.find(a => a.subchapter_id === sub.subchapter_id)?.articles_id || null, // เก็บ id ของบทความนั้นไว้ด้วย
+                    }));
+
                 setSubchapters(validSubchapters);
             } else {
                 setSubchapters([]);
             }
         } catch (err) {
-            console.error('ดึงข้อมูลหัวข้อย่อยล้มเหลว:', err);
+            console.error('ดึงข้อมูลบทเรียนล้มเหลว:', err);
             setSubchapters([]);
         }
     };
@@ -70,10 +80,10 @@ const Subchapter = () => {
             try {
                 const data = await deleteSubchapter(subchapter.subchapter_id);
                 if (data.status === "success") {
-                    Swal.fire('ลบแล้ว!', 'หัวข้อย่อยถูกลบเรียบร้อย', 'success');
+                    Swal.fire('ลบแล้ว!', 'บทเรียนถูกลบเรียบร้อย', 'success');
                     setSubchapters(prev => prev.filter(sub => sub.subchapter_id !== subchapter.subchapter_id));
                 } else {
-                    Swal.fire('ผิดพลาด!', data.message || 'ไม่สามารถลบหัวข้อย่อยได้', 'error');
+                    Swal.fire('ผิดพลาด!', data.message || 'ไม่สามารถลบบทเรียนได้', 'error');
                 }
             } catch (error) {
                 Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์', 'error');
@@ -108,19 +118,13 @@ const Subchapter = () => {
     };
     const [stats, setStats] = useState({ student_count: 0 });
 
-    const [recentLessons, setRecentLessons] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-
-
-
     return (
         <section className="flex h-screen overflow-hidden w-full">
             <Sidebar />
 
-            <div className=" p-8 w-full overflow-y-auto">
-                <div className="flex justify-between items-center mb-4">
-                    <div className="flex items-center space-x-2 text-sm text-gray-700 bg-gray-50 px-4 py-2 rounded-full">
+            <div className=" p-8 w-full overflow-y-auto mt-4 md:mt-0">
+                <div className="flex flex-col md:flex-row items-start md:items-center mb-4 gap-4">
+                    <div className="flex items-center space-x-2 text-sm text-gray-700 bg-gray-50 px-4 py-2 rounded-full whitespace-nowrap">
                         <Clock size={16} className="text-blue-500" />
                         <span>
                             {new Date().toLocaleDateString('th-TH', {
@@ -132,18 +136,18 @@ const Subchapter = () => {
                         </span>
                     </div>
 
-                    <SearchAndSort
-                        searchTerm={searchTerm}
-                        setSearchTerm={setSearchTerm}
-                        sortValue={sortOption}
-                        onSortChange={(v) => setSortOption(v)}
-                        sortOptions={sortOptions}
-                    />
-
+                    <div className="md:ml-auto">
+                        <SearchAndSort
+                            searchTerm={searchTerm}
+                            setSearchTerm={setSearchTerm}
+                            sortValue={sortOption}
+                            onSortChange={(v) => setSortOption(v)}
+                            sortOptions={sortOptions}
+                        />
+                    </div>
                 </div>
 
-                <div id="topic" className="relative flex justify-between items-center mt-10 bg-white border border-gray-100 p-3 rounded">
-                    <div className="absolute left-0 top-0 h-full w-1 rounded-l-2xl bg-blue-500" />
+                <div id="topic" className="relative flex justify-between items-center mt-4 bg-white border border-gray-100 p-3 rounded">                    <div className="absolute left-0 top-0 h-full w-1 rounded-l-2xl bg-blue-500" />
 
                     <div className="pl-4">
                         <h1 className="text-[22px] font-semibold text-blue-700">{chapterName}</h1>
@@ -168,7 +172,7 @@ const Subchapter = () => {
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center m-2 gap-4">
                                             <div className="flex flex-col">
-                                                <p className="text-gray-800">{sub.subchapter_name}</p>
+                                                <p className="text-gray-800 font-semibold">{sub.subchapter_name}</p>
                                                 {sub.subchapter_description && (
                                                     <p className="text-[13px] text-gray-500 break-words whitespace-normal">
                                                         {sub.subchapter_description}
@@ -183,7 +187,7 @@ const Subchapter = () => {
                                             setSelectedSubchapter={setSelectedSubchapter}
                                             setShowEditModal={setShowEditModal}
                                             setIsPopupOpen={setIsPopupOpen}
-                                            
+
                                         />
 
                                         {/* <div className="flex gap-6 mr-3">
@@ -266,7 +270,7 @@ const Subchapter = () => {
 
             </div>
 
-            <div className="w-[500px] bg-white p-5 shadow-md overflow-y-auto">
+            <div className="w-[500px] bg-white p-5 shadow-md overflow-y-auto hidden md:block">
                 {/* 
                 <div className="mb-6">
                     <Calendar className="border rounded" />
