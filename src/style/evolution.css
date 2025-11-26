@@ -1,0 +1,51 @@
+.react-calendar {
+    width: 100%;
+    border: none;
+    font-family: 'Prompt', sans-serif;
+    line-height: 1.5;
+  }
+  
+  .react-calendar__navigation {
+    display: flex;
+    justify-content: center; /* ✅ ให้เดือนอยู่ตรงกลาง */
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+  
+  .react-calendar__navigation button {
+    color: #4b5563;
+    font-weight: bold;
+    background: none;
+    border: none;
+    padding: 8px 10px;
+    font-size: 1rem;
+    border-radius: 0.375rem;
+    transition: background-color 0.3s;
+  }
+  
+  .react-calendar__navigation button:hover {
+    background-color: #f3f4f6;
+  }
+  
+  .react-calendar__tile {
+    padding: 10px 0;
+    font-size: 0.9rem;
+    border-radius: 0.375rem;
+  }
+  
+  .react-calendar__tile--now {
+    background: #c084fc;
+    color: white;
+    font-weight: bold;
+  }
+  
+  .react-calendar__tile--active {
+    background: #8b5cf6;
+    color: white;
+  }
+  
+  .react-calendar__tile--active:enabled:hover,
+  .react-calendar__tile--now:enabled:hover {
+    background: #7c3aed;
+  }
+  

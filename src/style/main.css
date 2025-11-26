@@ -1,0 +1,31 @@
+
+
+.navbar-container {
+    box-shadow: 0 0 5px #f8e4f8, 0 0 15px #f8e4f8, 0 0 30px #f8e4f8;
+}
+
+.navbar-container:hover {
+    box-shadow: 0 0 5px #ffb0ff, 0 0 15px #facafa, 0 0 30px #ffb0ff;
+}
+
+p {
+    color: #3E3E3E;
+}
+
+.about {
+    background: #FFFFFF;
+    border: 1px solid #A489F7;
+    box-shadow: 0px 4px 4px rgba(88, 86, 214, 0.1);
+    border-radius: 15px;
+    color: #A489F7;
+}
+
+/* .start {
+    border-radius: 15px;
+    background: #A489F7;
+    box-shadow: 0px 4px 4px rgba(175, 175, 175, 0.15);
+    color: #FFFFFF;
+} */
+.menu{
+    font-size: 16px;
+}

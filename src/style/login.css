@@ -1,0 +1,32 @@
+#signup{
+    /* color: #a48cf4; */
+    color: #437aff;
+
+}
+
+#signup:hover {
+    color: white;
+}
+
+#welcome {
+    /* background-color: #cabafd; */
+    background-color:#2761ec;
+}
+
+#signIn{
+    /* background-color: #cabafd; */
+    background-color:#2761ec;
+}
+
+#signIn:hover{
+    /* background-color: #a48cf4; */
+    background-color:#3251dd;
+}
+
+.signIn {
+    background-image: url('../assets/bg_login.png');
+    background-size:cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+

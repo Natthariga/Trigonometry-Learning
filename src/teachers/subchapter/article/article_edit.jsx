@@ -1,0 +1,238 @@
+import React, { useEffect, useState, useRef } from "react";
+import { useParams } from "react-router-dom";
+import { getArticleDetail, handleSaveChanges, deleteGameQuestion, deleteArticle } from "../../../api/teachers/article";
+import { MoveRight, Trash2 } from "lucide-react";
+import RenderContent from '../../../components/katex';
+import Swal from "sweetalert2";
+import Sidebar from "../../../components/sidebarAdmin";
+import { useLocation } from "react-router-dom";
+
+const ArticleEdit = () => {
+    const location = useLocation();
+    const { id } = location.state || {};
+    const [article, setArticle] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [editableContents, setEditableContents] = useState([]);
+    const containerRef = useRef([]);
+    const questionRefs = useRef({});
+    const answerRefs = useRef({});
+
+    useEffect(() => {
+        document.body.style.overflow = 'hidden';
+        return () => { document.body.style.overflow = ''; };
+    }, []);
+
+    useEffect(() => {
+        const fetchArticle = async () => {
+            setLoading(true);
+            const data = await getArticleDetail(id);
+            if (data) {
+                const sortedContents = (data.contentList || []).sort((a, b) => a.position - b.position);
+                setArticle({ ...data, contentList: sortedContents });
+                setEditableContents(sortedContents.map(c => ({
+                    ...c,
+                    id: c.contents_id,
+                    type: c.type || "text",
+                    questions: Array.isArray(c.questions) ? c.questions.map(q => ({
+                        id: q.id,
+                        question: q.question || "",
+                        answer: q.answer || "",
+                        points: q.points ?? 2
+                    })) : []
+                })));
+            }
+            setLoading(false);
+        };
+        fetchArticle();
+    }, [id]);
+
+    const handleInput = (contentId, e) => {
+        const value = e.target.value ?? e.target.getValue?.();
+        setEditableContents(prev =>
+            prev.map(c => c.id === contentId ? { ...c, content: value } : c)
+        );
+    };
+
+    const handleGraphChange = (contentId, field, value) => {
+        setEditableContents(prev =>
+            prev.map(c => c.id === contentId ? { ...c, [field]: value } : c)
+        );
+    };
+
+    const handleGameQuestionChange = (contentId, qIdx, field, value) => {
+        setEditableContents(prev =>
+            prev.map(c => {
+                if (c.id === contentId && Array.isArray(c.questions)) {
+                    const newQuestions = [...c.questions];
+                    newQuestions[qIdx] = { ...newQuestions[qIdx], [field]: value };
+                    return { ...c, questions: newQuestions };
+                }
+                return c;
+            })
+        );
+    };
+
+    const prepareContentsForSave = () => {
+        return editableContents.map(c => {
+            const newContent = { ...c };
+            if (Array.isArray(c.questions)) {
+                newContent.questions = c.questions.map(q => ({
+                    id: q.id,
+                    question: q.question,
+                    answer: q.answer,
+                    points: q.points ?? 2
+                }));
+            }
+            return newContent;
+        });
+    };
+
+    const handleDelete = async (id) => {
+        const confirm = await
+            Swal.fire({
+                text: 'ต้องการลบบทความนี้หรือไม่?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'ตกลง',
+                cancelButtonText: 'ยกเลิก',
+            });
+        if (confirm.isConfirmed) {
+            const data = await deleteArticle(id);
+            if (data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    text: 'ลบเนื้อหาสำเร็จ',
+                    confirmButtonText: 'ตกลง',
+                }).then(() => {
+                    window.location.href = '/teacher/subchapter';
+                });
+            }
+            else {
+                Swal.fire('ผิดพลาด', data.message, 'error');
+            }
+        }
+    };
+
+    const handleDeleteQuestion = async (contentId, qIdx) => {
+        const contentItem = editableContents.find(c => c.id === contentId);
+        if (!contentItem || !Array.isArray(contentItem.questions)) return;
+
+        const question = contentItem.questions[qIdx];
+        if (!question || !question.id) return;
+
+        const resultConfirm = await Swal.fire({
+            text: "ต้องการที่จะลบข้อนี้?",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'ลบเลย!',
+            cancelButtonText: 'ยกเลิก'
+        });
+
+        if (!resultConfirm.isConfirmed) return;
+
+        const result = await deleteGameQuestion(question.id);
+
+        if (result?.success) {
+            Swal.fire('ลบเรียบร้อย!', '', 'success');
+            setEditableContents(prev =>
+                prev.map(c =>
+                    c.id === contentId
+                        ? { ...c, questions: c.questions.filter((_, index) => index !== qIdx) }
+                        : c
+                )
+            );
+        } else {
+            Swal.fire('เกิดข้อผิดพลาด', result?.message || 'ไม่สามารถลบได้', 'error');
+        }
+    };
+
+    if (loading) return <p className="p-4">กำลังโหลดบทความ...</p>;
+    if (!article) return <p className="p-4">ไม่พบบทความ</p>;
+
+    return (
+        <section className="flex h-screen">
+            <Sidebar />
+            <div className="flex-1 h-full overflow-y-auto p-5">
+                <div className="border-t-4 mb-2 pl-2 border-blue-500 p-5">
+                    <label className="flex items-center justify-center font-semibold text-[22px]">ชื่อบทความ</label>
+                    <input
+                        type="text"
+                        value={article.title}
+                        onChange={(e) => setArticle(prev => ({ ...prev, title: e.target.value }))}
+                        className="border border-gray-200 break-words whitespace-pre-wrap w-full h-12 rounded-sm p-3"
+                    />
+                </div>
+
+                {editableContents.map(content => (
+                    <div key={content.contents_id} className="py-4 border-b border-gray-200">
+                        {/* Text / Note / Warning / Definition */}
+                        {(content.type === "text" || content.type === "note" || content.type === "warning" || content.type === "definition") && (
+                            <div className={`border-l-4 pl-2 p-2 ${content.type === "note" ? "border-yellow-600 bg-yellow-50" : content.type === "warning" ? "border-red-800 bg-red-50" : content.type === "definition" ? "border-purple-800 bg-purple-50" : "border-gray-800 bg-gray-100"}`}>
+                                {content.image && <img src={content.image} alt="" className="w-[400px]" />}
+                                <input type="file" accept="image/*" onChange={(e) => {
+                                    const file = e.target.files[0];
+                                    if (file) setEditableContents(prev => prev.map(c => c.id === content.id ? { ...c, imageFile: file } : c));
+                                }} />
+                                <math-field
+                                    style={{ minWidth: "100%", background: "transparent", outline: "none" }}
+                                    contentEditable="true"
+                                    value={content.content}
+                                    onInput={e => handleInput(content.id, e)}
+                                    multiline={true}
+                                    className="w-full border p-2 rounded-sm bg-white break-words whitespace-pre-wrap"
+                                />
+                                <div className="text-sm py-1 text-red-800">** หากจะพิมพ์องศา ให้พิมคำว่า deg **</div>
+                                <div className="border p-2 mt-2 bg-white">
+                                    <div className="text-center font-semibold bg-gray-200 mb-2">เนื้อหาเดิม</div>
+                                    <div className="text-sm flex gap-2 items-center"><RenderContent html={content.content} /></div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Graph */}
+                        {content.type === "graph" && (
+                            <div className="border-t-4 pl-2 border-blue-800 bg-blue-50 p-2">
+                                <div className="mb-2">
+                                    <div className="font-semibold text-blue-800 mb-2">สมการกราฟ:</div>
+                                    <math-field value={content.graphEquationValue || ""} onInput={e => handleGraphChange(content.id, "graphEquationValue", e.target.value)} />
+                                    <div className="font-semibold text-blue-800 mb-2 mt-2">คำอธิบายกราฟ:</div>
+                                    <math-field value={content.graphExplanation || ""} onInput={e => handleGraphChange(content.id, "graphExplanation", e.target.value)} />
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Game questions */}
+                        {Array.isArray(content.questions) && content.questions.map((q, idx) => (
+                            <div key={q.id ?? idx} className="p-3 rounded-lg bg-white shadow hover:shadow-md transition-all duration-200 relative">
+                                <button onClick={() => handleDeleteQuestion(content.id, idx)} className="absolute top-2 right-2 bg-red-600 text-white px-1 py-2 rounded hover:bg-red-700" title="ลบ"><Trash2 size={15} /></button>
+                                <div className="text-sm font-semibold mb-1 text-gray-800">คำถามที่ {idx + 1}:</div>
+                                <div className="flex flex-col md:flex-row justify-between gap-3 text-[18px]">
+                                    <div className="flex-1 border border-blue-200 px-3 py-2 rounded bg-blue-50">
+                                        <math-field value={q.question} ref={el => questionRefs.current[q.id ?? idx] = el} onInput={e => handleGameQuestionChange(content.id, idx, "question", e.target.getValue())} />
+                                        <div className="text-sm flex items-center gap-2">
+                                            <span className="font-semibold">ตัวอย่างการแสดงผล</span> <RenderContent html={q.question} />
+                                        </div>
+                                    </div>
+                                    <div className="hidden md:flex items-center justify-center w-6 text-gray-400"><MoveRight /></div>
+                                    <div className="flex-1 border-2 border-dashed border-green-400 px-3 py-2 rounded bg-green-50">
+                                        <math-field value={q.answer} ref={el => answerRefs.current[q.id ?? idx] = el} onInput={e => handleGameQuestionChange(content.id, idx, "answer", e.target.value)} />
+                                        <div className="text-sm flex items-center gap-2">
+                                            <span className="font-semibold">ตัวอย่างการแสดงผล</span> <RenderContent html={q.answer} />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ))}
+
+                <div className="flex justify-end py-4 gap-3">
+                    <button onClick={() => handleDelete(id)} className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700">ลบสรุปเนื้อหา</button>
+                    <button onClick={() => handleSaveChanges(id, article.title, prepareContentsForSave())} className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">บันทึกการแก้ไข</button>
+                </div>
+            </div>
+        </section>
+    );
+};
+
+export default ArticleEdit;

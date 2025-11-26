@@ -1,0 +1,450 @@
+import React, { useState, useEffect } from "react";
+import * as XLSX from "xlsx";
+import Swal from "sweetalert2";
+import Sidebar from "../components/sidebarAdmin";
+import StudentForm from "./student-form";
+import YearForm from "./year-form";
+import { FaPlus } from "react-icons/fa";
+import { Pencil, Plus } from "lucide-react";
+import { getStudentListApi, saveStudentListApi } from "../api/teachers/student-data";
+import EditYearForm from "./edit-year-form";
+
+const StudentListPage = () => {
+  const [students, setStudents] = useState([]);
+  const [sheetName, setSheetName] = useState("");
+  const [excelData, setExcelData] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [showYearForm, setShowYearForm] = useState(false);
+  const [showEditYearForm, setshowEditYearForm] = useState(false);
+
+  // filter ห้องเรียน
+  const [selectedClassroom, setSelectedClassroom] = useState("ทั้งหมด");
+  const [classroomOptions, setClassroomOptions] = useState([]);
+  const filteredStudents =
+    selectedClassroom === "ทั้งหมด"
+      ? students
+      : students.filter((s) => s.classroom_name === selectedClassroom);
+
+  // pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
+  const totalPages = Math.ceil(filteredStudents.length / itemsPerPage);
+  const currentStudents = filteredStudents.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedClassroom]);
+
+
+  // โหลดข้อมูล student_list 
+  const fetchStudents = async () => {
+    try {
+      const res = await getStudentListApi();
+      if (res.status === "success") {
+        setStudents(res.data);
+
+        const rooms = [...new Set(res.data.map((s) => s.classroom_name))].sort((a, b) =>
+          a.localeCompare(b, "th")
+        );
+        setClassroomOptions(["ทั้งหมด", ...rooms]);
+
+      } else {
+        setStudents([]);
+        Swal.fire({
+          icon: "error",
+          title: "เกิดข้อผิดพลาด",
+          text: res.message || "ไม่สามารถดึงข้อมูลนักเรียนได้",
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      setStudents([]);
+      Swal.fire({
+        icon: "error",
+        title: "เกิดข้อผิดพลาด",
+        text: "ไม่สามารถเชื่อมต่อ server ได้",
+      });
+    }
+  };
+
+  useEffect(() => {
+    fetchStudents();
+  }, []);
+
+  // Upload Excel
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+
+    reader.onload = (event) => {
+      const data = event.target.result;
+      const workbook = XLSX.read(data, { type: "binary" });
+      const lastSheetName = workbook.SheetNames[workbook.SheetNames.length - 1];
+      const worksheet = workbook.Sheets[lastSheetName];
+
+      // ดึงเทอม / ปี จากชื่อชีท 
+      const match = lastSheetName.match(/(\d+)[^\d]*(\d{4})/);
+      const semester = match ? match[1] : "-";
+      const academic_year = match ? match[2] : "-";
+
+      // แปลง JSON เริ่ม header row 3
+      const sheetData = XLSX.utils.sheet_to_json(worksheet, { range: 3, defval: "" });
+
+      // ตรวจสอบหัวคอลัมน์เฉพาะต้นฉบับ
+      const requiredHeaders = ["ชั้น/ห้อง", "เลขที่", "เลขประจำตัว", "ชื่อ - นามสกุล"];
+      const firstRow = Object.keys(sheetData[0] || {});
+      const hasRequiredHeaders = requiredHeaders.every((h) => firstRow.includes(h));
+
+      if (!hasRequiredHeaders) {
+        Swal.fire({
+          icon: "error",
+          title: "ข้อมูลไม่ถูกต้อง",
+          text: `ชีท "${lastSheetName}" ไม่มีหัวคอลัมน์ที่ถูกต้อง`,
+        });
+        return;
+      }
+
+      // แปลงเฉพาะ column ที่ต้องการ
+      const highSchoolGrades = ["ม.4", "ม.5", "ม.6"];
+      const finalData = sheetData
+        .map((row) => ({
+          classroom_name: row["ชั้น/ห้อง"],
+          student_number: row["เลขที่"],
+          student_id: row["เลขประจำตัว"],
+          fullname: row["ชื่อ - นามสกุล"],
+          semester,
+          academic_year,
+        }))
+        .filter((row) => {
+          const grade = row.classroom_name.split("/")[0].trim();
+          return highSchoolGrades.includes(grade);
+        });
+
+      setExcelData(finalData);
+      setSheetName(lastSheetName);
+
+      Swal.fire({
+        icon: "success",
+        title: "อัปโหลดเรียบร้อย",
+        text: `เทอม ${semester} / ปี ${academic_year}`,
+      });
+    };
+
+    reader.readAsBinaryString(file);
+  };
+
+  // บันทึก
+  const handleSaveToServer = async () => {
+    if (excelData.length === 0) return;
+
+    Swal.fire({
+      title: "กำลังบันทึกข้อมูล...",
+      text: "กรุณารอสักครู่",
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading(),
+    });
+
+    try {
+      const data = await saveStudentListApi({
+        students: excelData,
+        semester: excelData[0].semester,
+        academic_year: excelData[0].academic_year,
+      });
+
+      if (data.status === "success") {
+        Swal.fire({
+          icon: "success",
+          title: `บันทึกเรียบร้อย`,
+          showConfirmButton: false,
+          timer: 2000,
+        });
+        fetchStudents();
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "ไม่สามารถบันทึกข้อมูลได้",
+          text: data.message || "เกิดข้อผิดพลาดจาก server",
+        });
+      }
+    } catch (err) {
+      Swal.fire({
+        icon: "error",
+        title: "การเชื่อมต่อล้มเหลว",
+        text: "ไม่สามารถเชื่อมต่อกับ server ได้",
+      });
+    }
+  };
+
+
+  // Preview ข้อมูล
+  const showPreviewBeforeSave = () => {
+    if (!excelData || excelData.length === 0) {
+      Swal.fire("ไม่มีข้อมูล", "กรุณาอัปโหลดไฟล์ก่อน", "info");
+      return;
+    }
+
+    const { semester, academic_year } = excelData[0];
+
+    const tableHtml = `
+    <div style="margin-bottom: 10px; font-weight: bold;">
+      เทอม: ${semester} | ปีการศึกษา: ${academic_year}
+    </div>
+    <table style="width:100%; border-collapse: collapse; text-align:left;">
+      <thead>
+        <tr>
+          <th style="border:1px solid #ccc; padding:4px;">ลำดับ</th>
+          <th style="border:1px solid #ccc; padding:4px;">ชั้น/ห้อง</th>
+          <th style="border:1px solid #ccc; padding:4px;">เลขที่</th>
+          <th style="border:1px solid #ccc; padding:4px;">เลขประจำตัว</th>
+          <th style="border:1px solid #ccc; padding:4px;">ชื่อ - นามสกุล</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${excelData
+        .map(
+          (s, idx) => `
+            <tr>
+              <td style="border:1px solid #ccc; padding:4px;">${idx + 1}</td>
+              <td style="border:1px solid #ccc; padding:4px;">${s.classroom_name}</td>
+              <td style="border:1px solid #ccc; padding:4px;">${s.student_number}</td>
+              <td style="border:1px solid #ccc; padding:4px;">${s.student_id}</td>
+              <td style="border:1px solid #ccc; padding:4px;">${s.fullname}</td>
+            </tr>`
+        )
+        .join("")}
+      </tbody>
+    </table>
+  `;
+
+    Swal.fire({
+      title: "Preview ข้อมูลที่จะบันทึก",
+      html: `<div style="max-height:300px; overflow:auto;">${tableHtml}</div>`,
+      showCancelButton: true,
+      confirmButtonText: "บันทึกลงระบบ",
+      cancelButtonText: "ยกเลิก",
+      width: "800px",
+      scrollbarPadding: false,
+    }).then((result) => {
+      if (result.isConfirmed) handleSaveToServer();
+    });
+  };
+
+  // Export Excel
+  const handleExport = () => {
+    if (students.length === 0) return;
+    const ws = XLSX.utils.json_to_sheet(
+      students.map((s) => ({
+        "ชั้น/ห้อง": s.classroom_name,
+        "เลขที่": s.student_number,
+        "เลขประจำตัว": s.student_id,
+        "ชื่อ - นามสกุล": s.fullname,
+      }))
+    );
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "StudentList");
+    XLSX.writeFile(wb, "student_list.xlsx");
+  };
+
+  return (
+    <section className="flex h-screen overflow-hidden w-full">
+      <Sidebar />
+      <div className="flex-1 p-12 overflow-auto">
+        <div className="flex items-center justify-between mt-5 mb-5 md:mt-0">
+          <h2 className="text-2xl font-bold text-blue-900">
+            รายชื่อนักเรียน
+          </h2>
+
+          <div className="flex gap-3">
+            <div
+              className="flex items-center gap-2 cursor-pointer px-2 py-1 rounded-lg bg-blue-600 hover:bg-blue-700"
+              onClick={() => setShowForm(true)} title="เพิ่มนักเรียน"
+            >
+              <div className="flex items-center justify-center  text-white rounded-full py-2 px-1">
+                <Plus size={17} />
+              </div>
+              <span className="text-white font-medium hidden md:inline">เพิ่มนักเรียน</span>
+            </div>
+
+            {/* <div
+              className="flex items-center gap-2 cursor-pointer px-2 py-1 rounded-lg bg-yellow-600 hover:bg-yellow-700"
+              onClick={() => setShowYearForm(true)} title="เพิ่มปีการศึกษา"
+            >
+              <div className="flex items-center justify-center  text-white rounded-full py-2 px-1">
+                <Plus size={17} />
+              </div>
+              <span className="text-white font-medium hidden md:inline">เพิ่มปีการศึกษา</span>
+            </div> */}
+
+            <div
+              className="flex items-center gap-2 cursor-pointer px-2 py-1 rounded-lg bg-orange-600 hover:bg-orange-700"
+              onClick={() => setshowEditYearForm(true)} title="แก้ไขปีการศึกษา"
+            >
+              <div className="flex items-center justify-center  text-white rounded-full py-2 px-1">
+                <Pencil size={17} />
+              </div>
+              <span className="text-white font-medium hidden md:inline">แก้ไขปีการศึกษา</span>
+            </div>
+          </div>
+
+        </div>
+
+
+        <div className="flex flex-wrap gap-2 mb-8 items-start">
+
+          <div className="flex flex-col w-full sm:w-auto">
+            <input
+              type="file"
+              accept=".xlsx, .xls"
+              onChange={handleFileUpload}
+              className="border border-gray-300 px-3 py-2 rounded w-full"
+            />
+            <label className="text-sm text-red-500 mt-1 font-semibold">
+              ** ไฟล์นามสกุล xlsx, xls **
+            </label>
+          </div>
+
+          <button
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            onClick={showPreviewBeforeSave}
+          >
+            Import Excel
+          </button>
+
+          <button
+            className="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700"
+            onClick={handleExport}
+          >
+            Export Excel
+          </button>
+
+          {/* Filter Section */}
+          <div className="flex flex-wrap items-center justify-end gap-3 mb-4 ml-auto">
+            <label className="font-medium text-gray-700">ห้อง:</label>
+            <select
+              value={selectedClassroom}
+              onChange={(e) => setSelectedClassroom(e.target.value)}
+              className="border border-gray-300 rounded px-3 py-2"
+            >
+              {classroomOptions.map((room) => (
+                <option key={room} value={room}>
+                  {room}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+
+        <div className="overflow-x-auto max-h-[500px] rounded border border-gray-300">
+          <table className="min-w-full border-collapse border border-gray-200">
+            <thead className="bg-gray-100 sticky top-0">
+              <tr>
+                <th className="border border-gray-200 px-4 py-2 ">ลำดับ</th>
+                <th className="border border-gray-200 px-4 py-2 whitespace-nowrap">ชั้น/ห้อง</th>
+                <th className="border border-gray-200 px-4 py-2 whitespace-nowrap">เลขที่</th>
+                <th className="border border-gray-200 px-4 py-2 whitespace-nowrap">เลขประจำตัว</th>
+                <th className="border border-gray-200 px-4 py-2 whitespace-nowrap">ชื่อ - นามสกุล</th>
+                <th className="border border-gray-200 px-4 py-2 whitespace-nowrap">ปีการศึกษา</th>
+                <th className="border border-gray-200 px-4 py-2 whitespace-nowrap">เทอม</th>
+              </tr>
+            </thead>
+            <tbody>
+              {currentStudents && currentStudents.length > 0 ? (
+                currentStudents.map((s, idx) => (
+                  <tr key={s.student_id} className={idx % 2 === 0 ? "bg-gray-50" : "bg-white"}>
+                    <td className="border border-gray-200 px-4 py-2">
+                      {(currentPage - 1) * itemsPerPage + idx + 1}
+                    </td>
+                    <td className="border border-gray-200 px-4 py-2 text-center">{s.classroom_name}</td>
+                    <td className="border border-gray-200 px-4 py-2 text-center">{s.student_number}</td>
+                    <td className="border border-gray-200 px-4 py-2">{s.student_id}</td>
+                    <td className="border border-gray-200 px-4 py-2">{s.fullname}</td>
+                    <td className="border border-gray-200 px-4 py-2">{s.academic_year}</td>
+                    <td className="border border-gray-200 px-4 py-2">{s.semester}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={5} className="text-center py-4">
+                    ไม่มีข้อมูล
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-2 p-4 bg-white flex-wrap">
+            {/* ปุ่มก่อนหน้า */}
+            <button
+              className="px-3 py-1 border border-gray-300 rounded disabled:opacity-50"
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+            >
+              ก่อนหน้า
+            </button>
+
+            {/* ปุ่มเลขหน้า */}
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter(
+                (page) =>
+                  page === 1 ||  // หน้าแรก
+                  page === totalPages || // หน้าสุดท้าย
+                  Math.abs(page - currentPage) <= 1 
+              )
+              .map((page, idx, arr) => {
+                const prevPage = arr[idx - 1];
+                const showDots = prevPage && page - prevPage > 1;
+
+                return (
+                  <React.Fragment key={page}>
+                    <button
+                      onClick={() => setCurrentPage(page)}
+                      className={`px-3 py-1 border border-gray-300 rounded ${page === currentPage
+                        ? "bg-blue-600 text-white font-semibold"
+                        : "bg-white hover:bg-gray-100"
+                        }`}
+                    >
+                      {page}
+                    </button>
+                  </React.Fragment>
+                );
+              })}
+
+            {/* ปุ่มถัดไป */}
+            <button
+              className="px-3 py-1 border border-gray-300 rounded disabled:opacity-50"
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+            >
+              ถัดไป
+            </button>
+          </div>
+        )}
+
+
+        {/* Popup form */}
+        {showForm && <StudentForm onClose={() => setShowForm(false)} onSave={fetchStudents} />}
+        {showYearForm && (
+          <YearForm
+            onClose={() => setShowYearForm(false)}
+            onSave={fetchStudents}
+            classrooms={classroomOptions.filter(r => r !== "ทั้งหมด")}
+          />
+        )}
+        {showEditYearForm && (
+          <EditYearForm
+            onClose={() => setshowEditYearForm(false)}
+            onSave={fetchStudents}
+            classrooms={classroomOptions.filter(r => r !== "ทั้งหมด")}
+          />
+        )}
+      </div>
+    </section>
+  );
+};
+
+export default StudentListPage;

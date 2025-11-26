@@ -1,0 +1,350 @@
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from 'react-router-dom';
+import { Upload, X } from 'lucide-react';
+import { MathJaxContext } from "better-react-mathjax";
+import Sidebar from '../../../components/sidebarAdmin';
+import Swal from "sweetalert2";
+import { getUserId } from "../../../js/auth";
+import { addExamQuestions } from "../../../api/teachers/exam";
+
+const config = {
+    loader: { load: ["[tex]/html"] },
+    tex: {
+        packages: { "[+]": ["html"] },
+        inlineMath: [["$", "$"]],
+        displayMath: [["$$", "$$"]],
+    }
+};
+
+const AddExam = () => {
+    const [hasTimeLimitFromDB, setHasTimeLimitFromDB] = useState(false);
+    const [previews, setPreviews] = useState([]);
+    const { subchapterID } = useParams();
+    const navigate = useNavigate();
+    const [timeLimit, setTimeLimit] = useState(20);
+    const [formCount, setFormCount] = useState(1);
+    const [questions, setQuestions] = useState([
+        {
+            question_text: "",
+            question_picture: null,
+            choice_1: "",
+            choice_2: "",
+            choice_3: "",
+            choice_4: "",
+            answer: "",
+        },
+    ]);
+
+    const createEmptyQuestion = () => ({
+        question_text: "",
+        question_picture: null,
+        choice_1: "",
+        choice_2: "",
+        choice_3: "",
+        choice_4: "",
+        answer: "",
+    });
+
+    const handleAddForm = () => {
+        const newForms = Array.from({ length: formCount }, () => createEmptyQuestion());
+        setQuestions((prev) => [...prev, ...newForms]);
+        setPreviews((prev) => [...prev, ...Array(formCount).fill(null)]);
+        setFormCount(1);
+    };
+
+    const handleRemoveForm = (indexToRemove) => {
+        if (questions.length > 1) {
+            setQuestions(questions.filter((_, index) => index !== indexToRemove));
+            setPreviews(previews.filter((_, index) => index !== indexToRemove));
+        }
+    };
+
+    const handleChange = (index, field, value) => {
+        const updated = [...questions];
+        updated[index][field] = value;
+        setQuestions(updated);
+
+        if (field === 'question_picture' && value) {
+            const newPreviews = [...previews];
+            newPreviews[index] = URL.createObjectURL(value);
+            setPreviews(newPreviews);
+        }
+    };
+
+    const increase = () => setFormCount((prev) => prev + 1);
+    const decrease = () => {
+        if (formCount > 1) setFormCount((prev) => prev - 1);
+    };
+
+    const handleSave = async () => {
+        const teacherId = getUserId();
+        if (!subchapterID || !teacherId) {
+            Swal.fire("เกิดข้อผิดพลาด", "ขาด subchapter_id หรือ teacher_id", "warning");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("teacher_id", teacherId);
+        formData.append("subchapter_id", subchapterID);
+        formData.append("time_limit_minutes", timeLimit);
+
+        formData.append("question_text", JSON.stringify(questions.map(q => q.question_text)));
+        formData.append("correct_choice", questions.map(q => q.answer).join(","));
+        formData.append(
+            "choices",
+            JSON.stringify(
+                questions.map(q => [
+                    { label: "1", text: q.choice_1 },
+                    { label: "2", text: q.choice_2 },
+                    { label: "3", text: q.choice_3 },
+                    { label: "4", text: q.choice_4 },
+                ])
+            )
+        );
+
+        questions.forEach((q, index) => {
+            formData.append(`question_picture[${index}]`, q.question_picture || "");
+        });
+
+        try {
+            const result = await addExamQuestions(formData);
+
+            if (result.status === "done" && Array.isArray(result.results)) {
+                const failed = result.results.filter(r => r.status === "error");
+                if (failed.length === 0) {
+                    await Swal.fire({
+                        icon: "success",
+                        title: "เพิ่มข้อมูลสำเร็จ!",
+                        confirmButtonText: "ตกลง",
+                    });
+                    navigate("/teacher/exams");
+                } else {
+                    Swal.fire(
+                        "บันทึกไม่สำเร็จ",
+                        `คำถามลำดับที่ ${failed.map(f => f.index + 1).join(", ")} บันทึกไม่สำเร็จ`,
+                        "error"
+                    );
+                }
+            } else {
+                Swal.fire("เกิดข้อผิดพลาด", result.message || "ไม่สามารถเพิ่มคำถามได้", "error");
+            }
+        } catch (err) {
+            Swal.fire("ผิดพลาด", "เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ", "error");
+        }
+    };
+
+    const minutesToHHmm = (min) => {
+        const h = Math.floor(min / 60).toString().padStart(2, '0');
+        const m = (min % 60).toString().padStart(2, '0');
+        return `${h}:${m}`;
+    };
+
+    const hhmmToMinutes = (hhmm) => {
+        const [h, m] = hhmm.split(':').map(Number);
+        return h * 60 + m;
+    };
+
+    return (
+        <MathJaxContext config={config}>
+            <section className="flex h-screen overflow-hidden ">
+                <Sidebar />
+                <div className="flex-1 overflow-y-auto p-8">
+                    <div className="flex items-center space-x-3 mb-2">
+                        <button
+                            onClick={increase}
+                            className="shadow rounded px-2 py-1 text-xl text-[15px] text-blue-700 font-bold w-10 h-10"
+                        >
+                            +
+                        </button>
+
+                        <div className="shadow rounded w-16 h-10 flex items-center justify-center  text-[13px]">
+                            {formCount}
+                        </div>
+
+                        <button
+                            onClick={decrease}
+                            className="shadow rounded px-2 py-1 text-[15px] text-blue-700 font-bold w-10 h-10"
+                        >
+                            -
+                        </button>
+
+                        <button
+                            onClick={handleAddForm}
+                            className="bg-blue-600 text-white shadow-md px-6 py-2.5 rounded-lg transition-all duration-300 ease-in-out hover:bg-blue-600 hover:shadow-xl hover:-translate-y-0.5"
+                        >
+                            เพิ่ม
+                        </button>
+                    </div>
+
+                    {!hasTimeLimitFromDB && (
+                        <div className="mb-4 mt-4 flex items-center gap-4">
+                            <label className="block text-sm font-medium text-gray-700">
+                                เวลาในการทำข้อสอบ (ชั่วโมง/นาที)
+                            </label>
+                            <input
+                                type="time"
+                                value={minutesToHHmm(timeLimit)}
+                                onChange={(e) => setTimeLimit(hhmmToMinutes(e.target.value))}
+                                className="w-32 px-3 py-2 rounded-lg border border-gray-300 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                            />
+                        </div>
+                    )}
+
+                    <div className="shadow-lg p-7 mt-5 rounded-sm">
+
+                        <div className="flex justify-between">
+                            <h2 className="text-[20px] font-medium text-blue-600 mb-6">เพิ่มคำถาม</h2>
+                            <p className="mt-2 text-blue-600">มีทั้งหมด {questions.length} ฟอร์ม</p>
+                        </div>
+
+                        {questions.map((q, index) => (
+                            <div key={index} className="border rounded p-4 mb-4 relative">
+                                {questions.length > 1 && (
+                                    <button
+                                        onClick={() => handleRemoveForm(index)}
+                                        className="absolute top-2 right-2 text-red-500 hover:text-red-700"
+                                    >
+                                        <X size={20} />
+                                    </button>
+                                )}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="">
+                                        <p className="text-sm mb-2">สามารถแนบรูปภาพ หรือข้ามการอัปโหลดก็ได้ตามความต้องการ</p>
+                                        <div className="border border-gray-100 h-96 rounded flex flex-col items-center justify-center relative">
+                                            {previews[index] ? (
+                                                <div className="w-full h-full relative">
+                                                    <img
+                                                        src={previews[index]}
+                                                        alt="Preview"
+                                                        className="w-full h-full object-contain"
+                                                    />
+                                                    <button
+                                                        onClick={() => {
+                                                            const newPreviews = [...previews];
+                                                            newPreviews[index] = null;
+                                                            setPreviews(newPreviews);
+                                                            handleChange(index, 'question_picture', null);
+                                                        }}
+                                                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                                                    >
+                                                        ×
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <label htmlFor={`file-upload-${index}`} className="flex flex-col items-center justify-center cursor-pointer">
+                                                    <Upload className="w-10 h-10 text-gray-400 mb-2" />
+                                                    <p className="text-gray-600 font-medium">เลือกอัปโหลดไฟล์จากเครื่องของคุณ</p>
+                                                    <input
+                                                        id={`file-upload-${index}`}
+                                                        type="file"
+                                                        accept="image/*"
+                                                        onChange={(e) => {
+                                                            if (e.target.files[0]) {
+                                                                handleChange(index, "question_picture", e.target.files[0]);
+                                                            }
+                                                        }}
+                                                        className="hidden"
+                                                    />
+                                                </label>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="pl-4 rounded">
+                                        <h4 className="text-lg font-semibold mb-2">ข้อที่ {index + 1}</h4>
+
+                                        {/* คำถาม */}
+                                        <div className="relative w-full">
+                                            <math-field
+                                                class="w-full text-[20px] border rounded-lg p-2"
+                                                virtualkeyboardmode="onfocus"
+                                                virtualkeyboardlayout="functions"
+                                                placeholder="พิมพ์ฟังก์ชันที่นี่..."
+                                                value={q.question_text}
+                                                onInput={(e) => handleChange(index, "question_text", e.target.value)}
+                                            />
+                                        </div>
+
+
+                                        <div className="grid grid-cols-1 gap-3 my-4">
+                                            <p>ตัวเลือก</p>
+                                            {["choice_1", "choice_2", "choice_3", "choice_4"].map((choice, choiceIndex) => (
+                                                <div key={choiceIndex} className="relative">
+                                                    <math-field
+                                                        class="w-full border rounded px-3 py-2"
+                                                        virtualkeyboardmode="onfocus"
+                                                        virtualkeyboardlayout="functions"
+                                                        placeholder={`ตัวเลือก ${choiceIndex + 1}`}
+                                                        value={q[choice]}
+                                                        onInput={(e) => handleChange(index, choice, e.target.value)}
+                                                    />
+                                                </div>
+                                            ))}
+
+                                            <div className="mt-4">
+                                                <p className="mb-2">เฉลย</p>
+                                                <div className="grid grid-cols-4 gap-4">
+                                                    <label className="flex items-center space-x-2">
+                                                        <input
+                                                            type="radio"
+                                                            name={`answer-${index}`}
+                                                            value="1"
+                                                            checked={q.answer === "1"}
+                                                            onChange={(e) => handleChange(index, "answer", e.target.value)}
+                                                        />
+                                                        <span>ก</span>
+                                                    </label>
+                                                    <label className="flex items-center space-x-2">
+                                                        <input
+                                                            type="radio"
+                                                            name={`answer-${index}`}
+                                                            value="2"
+                                                            checked={q.answer === "2"}
+                                                            onChange={(e) => handleChange(index, "answer", e.target.value)}
+                                                        />
+                                                        <span>ข</span>
+                                                    </label>
+                                                    <label className="flex items-center space-x-2">
+                                                        <input
+                                                            type="radio"
+                                                            name={`answer-${index}`}
+                                                            value="3"
+                                                            checked={q.answer === "3"}
+                                                            onChange={(e) => handleChange(index, "answer", e.target.value)}
+                                                        />
+                                                        <span>ค</span>
+                                                    </label>
+                                                    <label className="flex items-center space-x-2">
+                                                        <input
+                                                            type="radio"
+                                                            name={`answer-${index}`}
+                                                            value="4"
+                                                            checked={q.answer === "4"}
+                                                            onChange={(e) => handleChange(index, "answer", e.target.value)}
+                                                        />
+                                                        <span>ง</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+
+                        <div className="mt-4 text-center">
+                            <button
+                                onClick={handleSave}
+                                className="w-full bg-blue-600 text-white shadow-md px-6 py-2.5 rounded-lg transition-all duration-300 ease-in-out hover:bg-blue-600 hover:shadow-xl hover:-translate-y-0.5"
+                            >
+                                บันทึก
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </MathJaxContext>
+
+    );
+};
+
+export default AddExam;
