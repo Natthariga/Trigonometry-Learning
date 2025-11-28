@@ -85,45 +85,55 @@ const StudentListPage = () => {
       return;
     }
 
-    if (checkedStudents.length === 0) {
-      Swal.fire("ยังไม่ได้เลือกนักเรียน", "กรุณาเลือกนักเรียนที่ต้องการเลื่อนชั้น", "warning");
+    const studentsToProcess = students.filter(
+      (s) => s.academic_year === selectedYear && s.semester === selectedTerm
+    );
+
+    if (studentsToProcess.length === 0) {
+      Swal.fire("ไม่มีข้อมูล", "ไม่พบนักเรียนในเทอม/ปีการศึกษานี้", "warning");
       return;
     }
 
     Swal.fire({
-      title: "ยืนยันการเลื่อนชั้น",
-      text: `นักเรียนที่เลือกจะถูกเลื่อนชั้นไปยังปีถัดไป`,
+      title: "ยืนยันการเลื่อนชั้นและเปลี่ยนปีการศึกษา",
+      text: "นักเรียนที่เลือกจะเลื่อนชั้น ส่วนคนที่ไม่ถูกเลือกจะเปลี่ยนแค่ปีการศึกษาและเทอม",
       icon: "question",
       showCancelButton: true,
-      confirmButtonText: "เลื่อนชั้น",
+      confirmButtonText: "ดำเนินการ",
       cancelButtonText: "ยกเลิก",
     }).then(async (result) => {
       if (!result.isConfirmed) return;
 
-      const promotedStudents = students
-        .filter(s => checkedStudents.includes(s.student_id))
-        .map(s => {
-          const match = s.classroom_name.match(/^ม\.(\d)(\/\d+)?/); // ตัวเลขและห้อง
-          const currentLevel = Number(match?.[1] || 6);
-          const room = match?.[2] || ""; // ถ้ามี /1, /2 ก็เก็บไว้
-          const nextClassroom = currentLevel < 6 ? `ม.${currentLevel + 1}${room}` : s.classroom_name;
+      const updatedStudents = studentsToProcess.map((s) => {
+        const isPromoted = checkedStudents.includes(s.student_id);
+        const nextAcademicYear = String(Number(s.academic_year) + 1);
+        const nextSemester = selectedTerm === "1" ? "2" : "1";
 
-          return {
-            student_code: s.student_id,
-            academic_year: String(Number(s.academic_year) + 1),
-            semester: selectedTerm === "1" ? "2" : "1",
-            classroom_name: nextClassroom
-          };
-        });
+        let nextClassroom = s.classroom_name;
+        if (isPromoted) {
+          const match = s.classroom_name.match(/^ม\.(\d)(\/\d+)?/);
+          const currentLevel = Number(match?.[1] || 6);
+          const room = match?.[2] || "";
+          nextClassroom = currentLevel < 6 ? `ม.${currentLevel + 1}${room}` : s.classroom_name;
+        }
+
+        return {
+          student_code: s.student_id,
+          academic_year: nextAcademicYear,
+          semester: nextSemester,
+          classroom_name: nextClassroom,
+        };
+      });
+
       try {
-        const res = await addYear({ students: promotedStudents });
+        const res = await addYear({ students: updatedStudents });
         if (res.status === "success") {
-          Swal.fire("สำเร็จ", "เลื่อนชั้นเรียบร้อยแล้ว", "success");
+          Swal.fire("สำเร็จ", "ประมวลผลเรียบร้อยแล้ว", "success");
           setCheckedStudents([]);
           setCheckAll(false);
           fetchStudents();
         } else {
-          Swal.fire("เกิดข้อผิดพลาด", res.message || "ไม่สามารถเลื่อนชั้นได้", "error");
+          Swal.fire("เกิดข้อผิดพลาด", res.message || "ไม่สามารถประมวลผลได้", "error");
         }
       } catch (err) {
         console.error("ERROR PROMOTE:", err);
@@ -287,8 +297,6 @@ const StudentListPage = () => {
             รายชื่อนักเรียน {selectedYear ? `| ปี ${selectedYear}` : ""} {selectedTerm ? `| เทอม ${selectedTerm}` : ""}
           </h2>
           <div className="flex gap-3">
-            <button className="bg-green-600 text-white p-2 rounded" onClick={handlePromote}>เลื่อนชั้น</button>
-
             <div className="flex items-center gap-2 cursor-pointer px-2 py-1 rounded-lg bg-blue-600 hover:bg-blue-700" onClick={() => setShowForm(true)}>
               <div className="flex items-center justify-center text-white rounded-full py-2 px-1"><Plus size={17} /></div>
               <span className="text-white font-medium hidden md:inline">เพิ่มนักเรียน</span>
@@ -312,6 +320,9 @@ const StudentListPage = () => {
           <select value={selectedClassroom} onChange={(e) => setSelectedClassroom(e.target.value)} className="border px-2 py-1 rounded">
             {classroomOptions.map(r => <option key={r} value={r}>{r}</option>)}
           </select>
+
+          <button className="bg-green-600 text-white px-3 py-1 rounded cursor-pointer" onClick={handlePromote}>เลื่อนชั้น</button>
+
           {/* <select
             value={rowsPerPage}
             onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}
